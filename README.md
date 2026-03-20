@@ -1,0 +1,1 @@
+# wp-ayecode-template-manager
