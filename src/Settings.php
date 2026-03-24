@@ -64,12 +64,62 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
      * @return array Configuration array with sections and fields.
      */
     public function get_config() {
-        // Build the base sections array with filterable product contexts.
-        $sections = array(
-            array(
-                'id'   => 'all_templates',
-                'name' => __( 'All Templates', 'wp-ayecode-template-manager' ),
-                'icon' => 'fa-solid fa-layer-group',
+        // Get registered templates from the registry
+        $registry = Registry::instance();
+        $registered_templates = $registry->get_registered_templates();
+
+        // Build sections dynamically from registered templates
+        $sections = array();
+
+        // Add "All Templates" section
+        $sections[] = array(
+            'id'   => 'all_templates',
+            'name' => __( 'All Templates', 'wp-ayecode-template-manager' ),
+            'icon' => 'fa-solid fa-layer-group',
+            'type' => 'list_table',
+
+            'table_config' => array(
+                'singular'         => __( 'Template', 'wp-ayecode-template-manager' ),
+                'plural'           => __( 'Templates', 'wp-ayecode-template-manager' ),
+                'ajax_action_get'  => 'get_templates',
+                'ajax_action_bulk' => 'bulk_template_action',
+
+                'columns' => array(
+                    'name'       => array( 'label' => __( 'Template', 'wp-ayecode-template-manager' ) ),
+                    'conditions' => array( 'label' => __( 'Conditions', 'wp-ayecode-template-manager' ) ),
+                    'builder'    => array( 'label' => __( 'Editor', 'wp-ayecode-template-manager' ) ),
+                    'product'    => array( 'label' => __( 'Product', 'wp-ayecode-template-manager' ) ),
+                ),
+
+                'statuses' => array(
+                    'status_key'     => 'status',
+                    'labels'         => array(
+                        'publish'    => __( 'Active', 'wp-ayecode-template-manager' ),
+                        'draft'      => __( 'Drafts', 'wp-ayecode-template-manager' ),
+                        'customized' => __( 'Customized', 'wp-ayecode-template-manager' ),
+                        'default'    => __( 'Default', 'wp-ayecode-template-manager' ),
+                    ),
+                ),
+
+                'bulk_actions' => array(
+                    'delete'   => __( 'Delete', 'wp-ayecode-template-manager' ),
+                    'publish'  => __( 'Publish', 'wp-ayecode-template-manager' ),
+                    'draft'    => __( 'Set to Draft', 'wp-ayecode-template-manager' ),
+                ),
+
+//                'row_actions' => array(
+//                    'edit'    => __( 'Edit', 'wp-ayecode-template-manager' ),
+//                    'restore' => __( 'Restore to Default', 'wp-ayecode-template-manager' ),
+//                ),
+            ),
+        );
+
+        // Add product-specific sections (read-only views, no CRUD)
+        foreach ( $registered_templates as $product_slug => $product_data ) {
+            $sections[] = array(
+                'id'   => $product_slug . '_templates',
+                'name' => $product_data['group_label'],
+                'icon' => $product_data['group_icon'],
                 'type' => 'list_table',
 
                 'table_config' => array(
@@ -79,99 +129,62 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
                     'ajax_action_bulk' => 'bulk_template_action',
 
                     'columns' => array(
-                        'image'    => array( 'label' => __( 'Preview', 'wp-ayecode-template-manager' ) ),
-                        'name'     => array( 'label' => __( 'Template Name', 'wp-ayecode-template-manager' ) ),
-                        'builder'  => array( 'label' => __( 'Builder', 'wp-ayecode-template-manager' ) ),
-                        'product'  => array( 'label' => __( 'Product', 'wp-ayecode-template-manager' ) ),
+                        'name'       => array( 'label' => __( 'Template', 'wp-ayecode-template-manager' ) ),
+                        'conditions' => array( 'label' => __( 'Conditions', 'wp-ayecode-template-manager' ) ),
+                        'builder'    => array( 'label' => __( 'Editor', 'wp-ayecode-template-manager' ) ),
                     ),
 
                     'statuses' => array(
                         'status_key'     => 'status',
                         'labels'         => array(
-//							'all'        => __( 'All', 'wp-ayecode-template-manager' ),
-                            'active'     => __( 'Active', 'wp-ayecode-template-manager' ),
+                            'publish'    => __( 'Active', 'wp-ayecode-template-manager' ),
                             'draft'      => __( 'Drafts', 'wp-ayecode-template-manager' ),
                             'customized' => __( 'Customized', 'wp-ayecode-template-manager' ),
                             'default'    => __( 'Default', 'wp-ayecode-template-manager' ),
                         ),
-//						'default_status' => 'all',
                     ),
 
                     'bulk_actions' => array(
                         'delete'   => __( 'Delete', 'wp-ayecode-template-manager' ),
-                        'activate' => __( 'Activate', 'wp-ayecode-template-manager' ),
+                        'publish'  => __( 'Publish', 'wp-ayecode-template-manager' ),
                         'draft'    => __( 'Set to Draft', 'wp-ayecode-template-manager' ),
                     ),
+
+//                    'row_actions' => array(
+//                        'edit'    => __( 'Edit', 'wp-ayecode-template-manager' ),
+//                        'restore' => __( 'Restore to Default', 'wp-ayecode-template-manager' ),
+//                    ),
+                    'row_actions' => [
+                        'edit' => [
+                            'label' => 'Editx',
+                            'icon' => 'fa-solid fa-pencil',
+//                            'action' => 'edit'
+                            'link' => '{{edit_url}}', // Use {{property}} for item values
+                            'target' => '_blank' // Open in new tab
+                        ],
+                        'delete' => [
+                            'label' => 'Deletex',
+                            'icon' => 'fa-solid fa-trash-can',
+                            'action' => 'delete',
+//                            'show_if' => "item.status !== 'protected'"
+                        ],
+                        'activate' => [
+                            'label' => 'Activate',
+                            'icon' => 'fa-solid fa-check',
+                            'ajax_action' => 'activate_key',
+//                            'show_if' => "item.status === 'inactive'"
+                        ]
+                    ]
                 ),
 
-                'modal_config' => array(
-                    'title_add'          => __( 'Add New Template', 'wp-ayecode-template-manager' ),
-                    'title_edit'         => __( 'Edit Template', 'wp-ayecode-template-manager' ),
-                    'ajax_action_create' => 'create_template',
-                    'ajax_action_update' => 'update_template',
-                    'ajax_action_delete' => 'delete_template',
-
-                    'fields' => array(
-                        array(
-                            'id'          => 'name',
-                            'type'        => 'text',
-                            'label'       => __( 'Template Name', 'wp-ayecode-template-manager' ),
-                            'description' => __( 'Enter a descriptive name for this template', 'wp-ayecode-template-manager' ),
-                            'extra_attributes' => array( 'required' => true ),
-                        ),
-                        array(
-                            'id'          => 'builder',
-                            'type'        => 'select',
-                            'label'       => __( 'Page Builder', 'wp-ayecode-template-manager' ),
-                            'description' => __( 'Select the page builder for this template', 'wp-ayecode-template-manager' ),
-                            'options'     => array(
-                                'gutenberg'  => __( 'Gutenberg', 'wp-ayecode-template-manager' ),
-                                'elementor'  => __( 'Elementor', 'wp-ayecode-template-manager' ),
-                                'beaver'     => __( 'Beaver Builder', 'wp-ayecode-template-manager' ),
-                                'divi'       => __( 'Divi', 'wp-ayecode-template-manager' ),
-                            ),
-                            'default' => 'gutenberg',
-                        ),
-                        array(
-                            'id'          => 'product',
-                            'type'        => 'select',
-                            'label'       => __( 'Product', 'wp-ayecode-template-manager' ),
-                            'description' => __( 'Assign this template to a product', 'wp-ayecode-template-manager' ),
-                            'options'     => array(
-                                'geodirectory' => __( 'GeoDirectory', 'wp-ayecode-template-manager' ),
-                                'userswp'      => __( 'UsersWP', 'wp-ayecode-template-manager' ),
-                                'invoicing'    => __( 'Invoicing', 'wp-ayecode-template-manager' ),
-                            ),
-                            'default' => 'geodirectory',
-                        ),
-                        array(
-                            'id'          => 'status',
-                            'type'        => 'select',
-                            'label'       => __( 'Status', 'wp-ayecode-template-manager' ),
-                            'options'     => array(
-                                'active'     => __( 'Active', 'wp-ayecode-template-manager' ),
-                                'draft'      => __( 'Draft', 'wp-ayecode-template-manager' ),
-                                'customized' => __( 'Customized', 'wp-ayecode-template-manager' ),
-                                'default'    => __( 'Default', 'wp-ayecode-template-manager' ),
-                            ),
-                            'default' => 'draft',
-                        ),
-                        array(
-                            'id'          => 'description',
-                            'type'        => 'textarea',
-                            'label'       => __( 'Description', 'wp-ayecode-template-manager' ),
-                            'description' => __( 'Optional description for this template', 'wp-ayecode-template-manager' ),
-                            'rows'        => 4,
-                        ),
-                    ),
-                ),
-            ),
-        );
+                // No modal_config - product sections are read-only, plugins control creation
+            );
+        }
 
         /**
          * Filter the template manager sections.
          *
-         * Allows other plugins to inject product-specific sections into the left sidebar.
+         * Allows other plugins to inject additional sections into the left sidebar.
          *
          * @param array $sections Array of section configurations.
          */
@@ -214,6 +227,10 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
                 $this->handle_bulk_action( $post_data );
                 break;
 
+            case 'restore_template':
+                $this->handle_restore_template( $post_data );
+                break;
+
             default:
                 wp_send_json_error( array( 'message' => __( 'Unknown action.', 'wp-ayecode-template-manager' ) ) );
         }
@@ -227,63 +244,32 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
      * @param array $post_data POST data from the AJAX request.
      */
     private function handle_get_templates( $post_data ) {
-        $data   = ! empty( $post_data['data'] ) ? json_decode( stripslashes( $post_data['data'] ), true ) : array();
-        $status = ! empty( $data['status'] ) ? sanitize_text_field( $data['status'] ) : 'all';
-
-        // Query templates from the custom post type.
-        $args = array(
-            'post_type'      => PostTypes\TemplateCPT::POST_TYPE,
-            'posts_per_page' => -1,
-            'post_status'    => 'any',
-        );
-
-        $templates = PostTypes\TemplateCPT::get_templates( $args );
-
-        // Format templates for the list_table.
-        $items = array();
-        $counts = array(
-            'all'        => 0,
-            'active'     => 0,
-            'draft'      => 0,
-            'customized' => 0,
-            'default'    => 0,
-        );
-
-        foreach ( $templates as $template ) {
-            $template_status = get_post_meta( $template->ID, '_template_status', true ) ?: 'draft';
-            $template_builder = get_post_meta( $template->ID, '_template_builder', true ) ?: 'gutenberg';
-            $template_product = get_post_meta( $template->ID, '_template_product', true ) ?: '';
-
-            // Get thumbnail.
-            $thumbnail = get_the_post_thumbnail_url( $template->ID, 'thumbnail' );
-            if ( ! $thumbnail ) {
-                $thumbnail = '';
-            }
-
-            $item = array(
-                'id'      => $template->ID,
-                'image'   => $thumbnail ? '<img src="' . esc_url( $thumbnail ) . '" alt="' . esc_attr( $template->post_title ) . '" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px;">' : '',
-                'name'    => $template->post_title,
-                'builder' => ucfirst( $template_builder ),
-                'product' => ucfirst( $template_product ),
-                'status'  => $template_status,
-            );
-
-            // Filter by status.
-            if ( 'all' === $status || $template_status === $status ) {
-                $items[] = $item;
-            }
-
-            // Count by status.
-            $counts['all']++;
-            if ( isset( $counts[ $template_status ] ) ) {
-                $counts[ $template_status ]++;
+        // Status can come from either 'status' POST param or inside 'data' JSON
+        $status = 'all';
+        if ( ! empty( $post_data['status'] ) ) {
+            $status = sanitize_text_field( $post_data['status'] );
+        } else {
+            $data = ! empty( $post_data['data'] ) ? json_decode( stripslashes( $post_data['data'] ), true ) : array();
+            if ( ! empty( $data['status'] ) ) {
+                $status = sanitize_text_field( $data['status'] );
             }
         }
 
-        $response = array(
-            'items'  => $items,
-            'counts' => $counts,
+        $section_id = ! empty( $post_data['section_id'] ) ? sanitize_text_field( $post_data['section_id'] ) : 'all_templates';
+
+        // Extract product slug from section_id (e.g., 'geodirectory_templates' -> 'geodirectory')
+        $product = '';
+        if ( 'all_templates' !== $section_id ) {
+            $product = str_replace( '_templates', '', $section_id );
+        }
+
+        // Use TemplateManager to get formatted templates
+        $manager = TemplateManager::instance();
+        $response = $manager->get_templates_for_display(
+            array(
+                'status'  => $status,
+                'product' => $product,
+            )
         );
 
         wp_send_json_success( $response );
@@ -504,6 +490,30 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
             wp_send_json_success( array( 'message' => $message ) );
         } else {
             wp_send_json_error( array( 'message' => __( 'Bulk action failed: ', 'wp-ayecode-template-manager' ) . implode( ', ', $errors ) ) );
+        }
+    }
+
+    /**
+     * Handle restore_template action.
+     *
+     * Restores a template to its default state.
+     *
+     * @param array $post_data POST data from the AJAX request.
+     */
+    private function handle_restore_template( $post_data ) {
+        $data = ! empty( $post_data['data'] ) ? json_decode( stripslashes( $post_data['data'] ), true ) : array();
+        $id   = ! empty( $data['id'] ) ? absint( $data['id'] ) : 0;
+
+        if ( ! $id ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'wp-ayecode-template-manager' ) ) );
+        }
+
+        $result = Helpers::restore_template( $id );
+
+        if ( $result ) {
+            wp_send_json_success( array( 'message' => __( 'Template restored to default successfully.', 'wp-ayecode-template-manager' ) ) );
+        } else {
+            wp_send_json_error( array( 'message' => __( 'Failed to restore template.', 'wp-ayecode-template-manager' ) ) );
         }
     }
 }

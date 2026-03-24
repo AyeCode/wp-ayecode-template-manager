@@ -54,6 +54,9 @@ class Loader {
 		// Initialize custom post type.
 		PostTypes\TemplateCPT::instance();
 
+		// Initialize template manager (registers post statuses, AJAX handlers).
+		TemplateManager::instance();
+
 		// Initialize settings framework.
 		if ( is_admin() ) {
 			Settings::instance();

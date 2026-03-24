@@ -33,6 +33,10 @@ if ( ! defined( 'AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR' ) ) {
 }
 
 // Load plugin classes.
+require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Environment.php';
+require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Helpers.php';
+require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Registry.php';
+require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/TemplateManager.php';
 require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/PostTypes/TemplateCPT.php';
 require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Settings.php';
 require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Loader.php';
@@ -74,4 +78,71 @@ function ayecode_template_manager_missing_framework_notice() {
 		</p>
 	</div>
 	<?php
+}
+
+// ============================================================================
+// Global Helper Functions
+// ============================================================================
+
+/**
+ * Get the current environment configuration.
+ *
+ * Returns detected theme type and active page builders.
+ *
+ * @param bool $force_refresh Force refresh the environment cache.
+ * @return array Environment array with detected features.
+ */
+function ayecode_get_environment( $force_refresh = false ) {
+	return \AyeCode\Templates\Helpers::get_environment( $force_refresh );
+}
+
+/**
+ * Create a template (page or layout CPT).
+ *
+ * @param string $template_key Unique key for the template.
+ * @param array  $config       Template configuration array.
+ * @return int|false Post ID on success, false on failure.
+ */
+function ayecode_create_template( $template_key, $config ) {
+	return \AyeCode\Templates\Helpers::create_template( $template_key, $config );
+}
+
+/**
+ * Get a template post ID by its key.
+ *
+ * @param string $template_key The template key.
+ * @return int|false Post ID if found, false otherwise.
+ */
+function ayecode_get_template_id( $template_key ) {
+	return \AyeCode\Templates\Helpers::get_template_id_by_key( $template_key );
+}
+
+/**
+ * Get the edit URL for a template.
+ *
+ * @param int $post_id The post ID.
+ * @return string The edit URL.
+ */
+function ayecode_get_template_edit_url( $post_id ) {
+	return \AyeCode\Templates\Helpers::get_template_edit_url( $post_id );
+}
+
+/**
+ * Restore a template to its default state.
+ *
+ * @param int $post_id The post ID.
+ * @return bool True on success, false on failure.
+ */
+function ayecode_restore_template( $post_id ) {
+	return \AyeCode\Templates\Helpers::restore_template( $post_id );
+}
+
+/**
+ * Delete a template by key.
+ *
+ * @param string $template_key The template key.
+ * @return bool True on success, false on failure.
+ */
+function ayecode_delete_template( $template_key ) {
+	return \AyeCode\Templates\Helpers::delete_template( $template_key );
 }
