@@ -74,42 +74,42 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
         // Add "All Templates" section
         $sections[] = array(
             'id'   => 'all_templates',
-            'name' => __( 'All Templates', 'wp-ayecode-template-manager' ),
+            'name' => __( 'All Templates', 'ayecode-connect' ),
             'icon' => 'fa-solid fa-layer-group',
             'type' => 'list_table',
 
             'table_config' => array(
-                'singular'         => __( 'Template', 'wp-ayecode-template-manager' ),
-                'plural'           => __( 'Templates', 'wp-ayecode-template-manager' ),
+                'singular'         => __( 'Template', 'ayecode-connect' ),
+                'plural'           => __( 'Templates', 'ayecode-connect' ),
                 'ajax_action_get'  => 'get_templates',
                 'ajax_action_bulk' => 'bulk_template_action',
 
                 'columns' => array(
-                    'name'       => array( 'label' => __( 'Template', 'wp-ayecode-template-manager' ) ),
-                    'conditions' => array( 'label' => __( 'Conditions', 'wp-ayecode-template-manager' ) ),
-                    'builder'    => array( 'label' => __( 'Editor', 'wp-ayecode-template-manager' ) ),
-                    'product'    => array( 'label' => __( 'Product', 'wp-ayecode-template-manager' ) ),
+                    'name'       => array( 'label' => __( 'Template', 'ayecode-connect' ) ),
+                    'conditions' => array( 'label' => __( 'Conditions', 'ayecode-connect' ) ),
+                    'builder'    => array( 'label' => __( 'Editor', 'ayecode-connect' ) ),
+                    'product'    => array( 'label' => __( 'Product', 'ayecode-connect' ) ),
                 ),
 
                 'statuses' => array(
                     'status_key'     => 'status',
                     'labels'         => array(
-                        'publish'    => __( 'Active', 'wp-ayecode-template-manager' ),
-                        'draft'      => __( 'Drafts', 'wp-ayecode-template-manager' ),
-                        'customized' => __( 'Customized', 'wp-ayecode-template-manager' ),
-                        'default'    => __( 'Default', 'wp-ayecode-template-manager' ),
+                        'publish'    => __( 'Active', 'ayecode-connect' ),
+                        'draft'      => __( 'Drafts', 'ayecode-connect' ),
+                        'customized' => __( 'Customized', 'ayecode-connect' ),
+                        'default'    => __( 'Default', 'ayecode-connect' ),
                     ),
                 ),
 
                 'bulk_actions' => array(
-                    'delete'   => __( 'Delete', 'wp-ayecode-template-manager' ),
-                    'publish'  => __( 'Publish', 'wp-ayecode-template-manager' ),
-                    'draft'    => __( 'Set to Draft', 'wp-ayecode-template-manager' ),
+                    'delete'   => __( 'Delete', 'ayecode-connect' ),
+                    'publish'  => __( 'Publish', 'ayecode-connect' ),
+                    'draft'    => __( 'Set to Draft', 'ayecode-connect' ),
                 ),
 
 //                'row_actions' => array(
-//                    'edit'    => __( 'Edit', 'wp-ayecode-template-manager' ),
-//                    'restore' => __( 'Restore to Default', 'wp-ayecode-template-manager' ),
+//                    'edit'    => __( 'Edit', 'ayecode-connect' ),
+//                    'restore' => __( 'Restore to Default', 'ayecode-connect' ),
 //                ),
             ),
         );
@@ -123,57 +123,58 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
                 'type' => 'list_table',
 
                 'table_config' => array(
-                    'singular'         => __( 'Template', 'wp-ayecode-template-manager' ),
-                    'plural'           => __( 'Templates', 'wp-ayecode-template-manager' ),
+                    'singular'         => __( 'Template', 'ayecode-connect' ),
+                    'plural'           => __( 'Templates', 'ayecode-connect' ),
                     'ajax_action_get'  => 'get_templates',
                     'ajax_action_bulk' => 'bulk_template_action',
 
                     'columns' => array(
-                        'name'       => array( 'label' => __( 'Template', 'wp-ayecode-template-manager' ) ),
-                        'conditions' => array( 'label' => __( 'Conditions', 'wp-ayecode-template-manager' ) ),
-                        'builder'    => array( 'label' => __( 'Editor', 'wp-ayecode-template-manager' ) ),
+                        'name'       => array( 'label' => __( 'Template', 'ayecode-connect' ) ),
+                        'conditions' => array( 'label' => __( 'Conditions', 'ayecode-connect' ) ),
+                        'builder'    => array( 'label' => __( 'Editor', 'ayecode-connect' ) ),
                     ),
 
                     'statuses' => array(
                         'status_key'     => 'status',
                         'labels'         => array(
-                            'publish'    => __( 'Active', 'wp-ayecode-template-manager' ),
-                            'draft'      => __( 'Drafts', 'wp-ayecode-template-manager' ),
-                            'customized' => __( 'Customized', 'wp-ayecode-template-manager' ),
-                            'default'    => __( 'Default', 'wp-ayecode-template-manager' ),
+                            'publish'    => __( 'Active', 'ayecode-connect' ),
+                            'draft'      => __( 'Drafts', 'ayecode-connect' ),
+                            'customized' => __( 'Customized', 'ayecode-connect' ),
+                            'default'    => __( 'Default', 'ayecode-connect' ),
                         ),
                     ),
 
                     'bulk_actions' => array(
-                        'delete'   => __( 'Delete', 'wp-ayecode-template-manager' ),
-                        'publish'  => __( 'Publish', 'wp-ayecode-template-manager' ),
-                        'draft'    => __( 'Set to Draft', 'wp-ayecode-template-manager' ),
+                        'delete'   => __( 'Delete', 'ayecode-connect' ),
+                        'publish'  => __( 'Publish', 'ayecode-connect' ),
+                        'draft'    => __( 'Set to Draft', 'ayecode-connect' ),
                     ),
 
 //                    'row_actions' => array(
-//                        'edit'    => __( 'Edit', 'wp-ayecode-template-manager' ),
-//                        'restore' => __( 'Restore to Default', 'wp-ayecode-template-manager' ),
+//                        'edit'    => __( 'Edit', 'ayecode-connect' ),
+//                        'restore' => __( 'Restore to Default', 'ayecode-connect' ),
 //                    ),
                     'row_actions' => [
+                        'restore' => [
+                            'label' => 'Restore to Default',
+                            'icon' => 'fa-solid fa-rotate-left',
+                            'ajax_action' => 'restore_template',
+//                            'show_if' => "item.status === 'inactive'"
+                        ],
                         'edit' => [
-                            'label' => 'Editx',
+                            'label' => __( 'Edit', 'ayecode-connect' ),
                             'icon' => 'fa-solid fa-pencil',
 //                            'action' => 'edit'
                             'link' => '{{edit_url}}', // Use {{property}} for item values
                             'target' => '_blank' // Open in new tab
                         ],
                         'delete' => [
-                            'label' => 'Deletex',
+                            'label' => __( 'Delete', 'ayecode-connect' ),
                             'icon' => 'fa-solid fa-trash-can',
                             'action' => 'delete',
 //                            'show_if' => "item.status !== 'protected'"
                         ],
-                        'activate' => [
-                            'label' => 'Activate',
-                            'icon' => 'fa-solid fa-check',
-                            'ajax_action' => 'activate_key',
-//                            'show_if' => "item.status === 'inactive'"
-                        ]
+
                     ]
                 ),
 
@@ -232,7 +233,7 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
                 break;
 
             default:
-                wp_send_json_error( array( 'message' => __( 'Unknown action.', 'wp-ayecode-template-manager' ) ) );
+                wp_send_json_error( array( 'message' => __( 'Unknown action.', 'ayecode-connect' ) ) );
         }
     }
 
@@ -292,7 +293,7 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
         $description = ! empty( $data['description'] ) ? sanitize_textarea_field( $data['description'] ) : '';
 
         if ( empty( $name ) ) {
-            wp_send_json_error( array( 'message' => __( 'Template name is required.', 'wp-ayecode-template-manager' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Template name is required.', 'ayecode-connect' ) ) );
         }
 
         // Create the template post.
@@ -351,13 +352,13 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
         $description = ! empty( $data['description'] ) ? sanitize_textarea_field( $data['description'] ) : '';
 
         if ( ! $id ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'wp-ayecode-template-manager' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'ayecode-connect' ) ) );
         }
 
         // Verify the post exists and is a template.
         $template = PostTypes\TemplateCPT::get_template( $id );
         if ( ! $template ) {
-            wp_send_json_error( array( 'message' => __( 'Template not found.', 'wp-ayecode-template-manager' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Template not found.', 'ayecode-connect' ) ) );
         }
 
         // Update the post.
@@ -409,23 +410,23 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
         $id   = ! empty( $data['id'] ) ? absint( $data['id'] ) : 0;
 
         if ( ! $id ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'wp-ayecode-template-manager' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'ayecode-connect' ) ) );
         }
 
         // Verify the post exists and is a template.
         $template = PostTypes\TemplateCPT::get_template( $id );
         if ( ! $template ) {
-            wp_send_json_error( array( 'message' => __( 'Template not found.', 'wp-ayecode-template-manager' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Template not found.', 'ayecode-connect' ) ) );
         }
 
         // Delete the post.
         $result = wp_delete_post( $id, true );
 
         if ( ! $result ) {
-            wp_send_json_error( array( 'message' => __( 'Failed to delete template.', 'wp-ayecode-template-manager' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Failed to delete template.', 'ayecode-connect' ) ) );
         }
 
-        wp_send_json_success( array( 'message' => __( 'Template deleted successfully.', 'wp-ayecode-template-manager' ) ) );
+        wp_send_json_success( array( 'message' => __( 'Template deleted successfully.', 'ayecode-connect' ) ) );
     }
 
     /**
@@ -441,11 +442,11 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
         $action   = ! empty( $data['action'] ) ? sanitize_text_field( $data['action'] ) : '';
 
         if ( empty( $item_ids ) || ! is_array( $item_ids ) ) {
-            wp_send_json_error( array( 'message' => __( 'No templates selected.', 'wp-ayecode-template-manager' ) ) );
+            wp_send_json_error( array( 'message' => __( 'No templates selected.', 'ayecode-connect' ) ) );
         }
 
         if ( empty( $action ) ) {
-            wp_send_json_error( array( 'message' => __( 'No action specified.', 'wp-ayecode-template-manager' ) ) );
+            wp_send_json_error( array( 'message' => __( 'No action specified.', 'ayecode-connect' ) ) );
         }
 
         $success_count = 0;
@@ -461,7 +462,7 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
                     $success_count++;
                 } else {
                     $error_count++;
-                    $errors[] = sprintf( __( 'Failed to delete template ID: %d', 'wp-ayecode-template-manager' ), $id );
+                    $errors[] = sprintf( __( 'Failed to delete template ID: %d', 'ayecode-connect' ), $id );
                 }
             } elseif ( 'activate' === $action ) {
                 update_post_meta( $id, '_template_status', 'active' );
@@ -476,20 +477,20 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
         if ( $success_count > 0 && 0 === $error_count ) {
             $message = sprintf(
             /* translators: %d: number of templates */
-                _n( '%d template processed successfully.', '%d templates processed successfully.', $success_count, 'wp-ayecode-template-manager' ),
+                _n( '%d template processed successfully.', '%d templates processed successfully.', $success_count, 'ayecode-connect' ),
                 $success_count
             );
             wp_send_json_success( array( 'message' => $message ) );
         } elseif ( $success_count > 0 && $error_count > 0 ) {
             $message = sprintf(
             /* translators: %1$d: success count, %2$d: error count */
-                __( '%1$d template(s) processed successfully. %2$d failed.', 'wp-ayecode-template-manager' ),
+                __( '%1$d template(s) processed successfully. %2$d failed.', 'ayecode-connect' ),
                 $success_count,
                 $error_count
             );
             wp_send_json_success( array( 'message' => $message ) );
         } else {
-            wp_send_json_error( array( 'message' => __( 'Bulk action failed: ', 'wp-ayecode-template-manager' ) . implode( ', ', $errors ) ) );
+            wp_send_json_error( array( 'message' => __( 'Bulk action failed: ', 'ayecode-connect' ) . implode( ', ', $errors ) ) );
         }
     }
 
@@ -505,15 +506,15 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
         $id   = ! empty( $data['id'] ) ? absint( $data['id'] ) : 0;
 
         if ( ! $id ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'wp-ayecode-template-manager' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'ayecode-connect' ) ) );
         }
 
         $result = Helpers::restore_template( $id );
 
         if ( $result ) {
-            wp_send_json_success( array( 'message' => __( 'Template restored to default successfully.', 'wp-ayecode-template-manager' ) ) );
+            wp_send_json_success( array( 'message' => __( 'Template restored to default successfully.', 'ayecode-connect' ) ) );
         } else {
-            wp_send_json_error( array( 'message' => __( 'Failed to restore template.', 'wp-ayecode-template-manager' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Failed to restore template.', 'ayecode-connect' ) ) );
         }
     }
 }

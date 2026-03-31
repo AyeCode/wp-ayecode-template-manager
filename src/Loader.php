@@ -71,7 +71,7 @@ class Loader {
 	 */
 	public function load_textdomain() {
 		load_plugin_textdomain(
-			'wp-ayecode-template-manager',
+			'ayecode-connect',
 			false,
 			dirname( plugin_basename( AYECODE_TEMPLATE_MANAGER_PLUGIN_FILE ) ) . '/languages'
 		);

@@ -34,6 +34,7 @@ if ( ! defined( 'AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR' ) ) {
 
 // Load plugin classes.
 require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Environment.php';
+require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Router.php';
 require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Helpers.php';
 require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Registry.php';
 require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/TemplateManager.php';
@@ -70,7 +71,7 @@ function ayecode_template_manager_missing_framework_notice() {
 			echo wp_kses_post(
 				sprintf(
 					/* translators: %s: plugin name */
-					__( '<strong>%s</strong> requires the AyeCode Settings Framework to be installed and activated.', 'wp-ayecode-template-manager' ),
+					__( '<strong>%s</strong> requires the AyeCode Settings Framework to be installed and activated.', 'ayecode-connect' ),
 					'WP AyeCode Template Manager'
 				)
 			);

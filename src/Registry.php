@@ -86,9 +86,10 @@ class Registry {
 		 *       'template_key' => [
 		 *         'title'       => 'Template Title',
 		 *         'description' => 'Template description',
-		 *         'post_id'     => 123, // REQUIRED: The actual post ID
+		 *         'post_id'     => 123, // For classic themes (or 0 if FSE only)
+		 *         'fse_slug'    => 'single-listing', // For block themes (FSE)
+		 *         'fse_type'    => 'wp_template', // 'wp_template' or 'wp_template_part'
 		 *         'type'        => 'page', // or 'layout'
-		 *         'builder'     => 'elementor', // Which builder this template uses
 		 *         'conditions'  => 'Singular: Listing', // Optional: When this template applies
 		 *       ]
 		 *     ]
@@ -133,16 +134,18 @@ class Registry {
 
 			// Validate each template item
 			foreach ( $product_data['items'] as $template_key => $template_data ) {
-				if ( ! is_array( $template_data ) || empty( $template_data['post_id'] ) ) {
+				// Must have either post_id or fse_slug
+				if ( ! is_array( $template_data ) || ( empty( $template_data['post_id'] ) && empty( $template_data['fse_slug'] ) ) ) {
 					continue;
 				}
 
 				$validated[ $product_slug ]['items'][ $template_key ] = array(
 					'title'       => ! empty( $template_data['title'] ) ? $template_data['title'] : ucwords( str_replace( '_', ' ', $template_key ) ),
 					'description' => ! empty( $template_data['description'] ) ? $template_data['description'] : '',
-					'post_id'     => absint( $template_data['post_id'] ),
+					'post_id'     => isset( $template_data['post_id'] ) ? absint( $template_data['post_id'] ) : 0,
+					'fse_slug'    => ! empty( $template_data['fse_slug'] ) ? sanitize_key( $template_data['fse_slug'] ) : '',
+					'fse_type'    => ! empty( $template_data['fse_type'] ) ? sanitize_key( $template_data['fse_type'] ) : 'wp_template',
 					'type'        => ! empty( $template_data['type'] ) ? $template_data['type'] : 'layout',
-					'builder'     => ! empty( $template_data['builder'] ) ? sanitize_key( $template_data['builder'] ) : 'gutenberg',
 					'conditions'  => ! empty( $template_data['conditions'] ) ? wp_kses_post( $template_data['conditions'] ) : '',
 				);
 			}

@@ -8,9 +8,10 @@ This guide explains how to integrate the WP AyeCode Template Manager into your A
 2. [Environment Detection](#environment-detection)
 3. [Creating Templates](#creating-templates)
 4. [Registering Templates for Display](#registering-templates-for-display)
-5. [Template Restoration](#template-restoration)
-6. [Complete Example](#complete-example)
-7. [Available Hooks & Filters](#available-hooks--filters)
+5. [FSE (Block Theme) Support](#fse-block-theme-support)
+6. [Template Restoration](#template-restoration)
+7. [Complete Example](#complete-example)
+8. [Available Hooks & Filters](#available-hooks--filters)
 
 ---
 
@@ -221,18 +222,96 @@ add_filter( 'ayecode_register_templates', function( $templates, $environment ) {
 
     'items' => [
       'template_key' => [                // Unique key for this template
-        'title'         => 'Template Title',
-        'description'   => 'Template description',
-        'post_id'       => 123,          // REQUIRED: The actual post ID
-        'type'          => 'page',       // 'page' or 'layout'
-        'builder'       => 'elementor',  // Which builder this uses
-        'preview_image' => 'https://...', // Optional preview image URL
-        'capabilities'  => 'manage_options', // Who can edit (default: 'edit_pages')
+        'title'       => 'Template Title',
+        'description' => 'Template description',
+        'post_id'     => 123,            // For classic themes (or 0 for FSE-only)
+        'fse_slug'    => 'single-listing', // For block themes (optional)
+        'fse_type'    => 'wp_template',  // 'wp_template' or 'wp_template_part'
+        'type'        => 'page',         // 'page' or 'layout'
+        'conditions'  => 'Singular: Listing', // Optional: when template applies
       ]
     ]
   ]
 ]
 ```
+
+**Note:** The Template Manager automatically detects which builder is being used from post meta - you don't need to specify it in registration!
+
+---
+
+## FSE (Block Theme) Support
+
+The Template Manager supports Full Site Editing (FSE) / Block Themes. Here's how to register templates for both classic AND block themes:
+
+### Registering FSE Templates
+
+```php
+add_filter( 'ayecode_register_templates', function( $templates, $environment ) {
+
+    $templates['geodirectory'] = array(
+        'group_label' => 'GeoDirectory',
+        'group_icon'  => 'dashicons-location',
+        'items' => array(
+
+            // Supports BOTH classic and block themes
+            'gd_single_listing' => array(
+                'title'       => 'Single Listing',
+                'description' => 'Individual listing detail page',
+                'post_id'     => get_option('geodir_layout_single'), // For classic themes
+                'fse_slug'    => 'single-listing',                   // For block themes
+                'fse_type'    => 'wp_template',                      // Template (not part)
+                'type'        => 'layout',
+                'conditions'  => 'Singular: Listing',
+            ),
+
+            // FSE ONLY template
+            'gd_archive' => array(
+                'title'       => 'Listing Archive',
+                'description' => 'Archive and search results',
+                'post_id'     => 0,                    // Not used for FSE
+                'fse_slug'    => 'archive-listing',    // FSE template slug
+                'fse_type'    => 'wp_template',
+                'type'        => 'layout',
+                'conditions'  => 'Archive: Listing',
+            ),
+
+            // Classic ONLY (regular page)
+            'gd_add_listing' => array(
+                'title'       => 'Add Listing',
+                'description' => 'Frontend submission form',
+                'post_id'     => get_option('geodir_page_add'), // Classic page ID
+                'fse_slug'    => '',                            // Not applicable
+                'type'        => 'page',
+            ),
+
+            // Template PART example
+            'gd_listing_card' => array(
+                'title'       => 'Listing Card',
+                'description' => 'Reusable listing card component',
+                'post_id'     => 0,
+                'fse_slug'    => 'listing-card',
+                'fse_type'    => 'wp_template_part',  // This is a template PART
+                'type'        => 'layout',
+            ),
+        ),
+    );
+
+    return $templates;
+}, 10, 2);
+```
+
+### How FSE Routing Works
+
+The Template Manager's Router automatically:
+
+1. **Detects theme type** using `wp_is_block_theme()`
+2. **For Block Themes**: Uses `fse_slug` and `fse_type` to route to Site Editor
+3. **For Classic Themes**: Uses `post_id` and detects the active builder from post meta
+4. **Builder Detection**: Checks post meta to determine which editor (Elementor, Divi, Gutenberg, etc.)
+
+**FSE Template Types:**
+- `wp_template` - Full page templates (single, archive, etc.)
+- `wp_template_part` - Reusable components (header, footer, cards, etc.)
 
 ---
 

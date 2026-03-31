@@ -62,13 +62,13 @@ class TemplateManager {
 		register_post_status(
 			'customized',
 			array(
-				'label'                     => _x( 'Customized', 'post status', 'wp-ayecode-template-manager' ),
+				'label'                     => _x( 'Customized', 'post status', 'ayecode-connect' ),
 				'public'                    => true,
 				'exclude_from_search'       => false,
 				'show_in_admin_all_list'    => true,
 				'show_in_admin_status_list' => true,
 				/* translators: %s: number of customized templates */
-				'label_count'               => _n_noop( 'Customized <span class="count">(%s)</span>', 'Customized <span class="count">(%s)</span>', 'wp-ayecode-template-manager' ),
+				'label_count'               => _n_noop( 'Customized <span class="count">(%s)</span>', 'Customized <span class="count">(%s)</span>', 'ayecode-connect' ),
 			)
 		);
 
@@ -76,13 +76,13 @@ class TemplateManager {
 		register_post_status(
 			'default',
 			array(
-				'label'                     => _x( 'Default', 'post status', 'wp-ayecode-template-manager' ),
+				'label'                     => _x( 'Default', 'post status', 'ayecode-connect' ),
 				'public'                    => true,
 				'exclude_from_search'       => false,
 				'show_in_admin_all_list'    => true,
 				'show_in_admin_status_list' => true,
 				/* translators: %s: number of default templates */
-				'label_count'               => _n_noop( 'Default <span class="count">(%s)</span>', 'Default <span class="count">(%s)</span>', 'wp-ayecode-template-manager' ),
+				'label_count'               => _n_noop( 'Default <span class="count">(%s)</span>', 'Default <span class="count">(%s)</span>', 'ayecode-connect' ),
 			)
 		);
 	}
@@ -94,21 +94,21 @@ class TemplateManager {
 		check_ajax_referer( 'ayecode-template-manager', 'nonce' );
 
 		if ( ! current_user_can( 'edit_pages' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-ayecode-template-manager' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'ayecode-connect' ) ) );
 		}
 
 		$post_id = ! empty( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
 
 		if ( ! $post_id ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'wp-ayecode-template-manager' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'ayecode-connect' ) ) );
 		}
 
 		$result = Helpers::restore_template( $post_id );
 
 		if ( $result ) {
-			wp_send_json_success( array( 'message' => __( 'Template restored successfully.', 'wp-ayecode-template-manager' ) ) );
+			wp_send_json_success( array( 'message' => __( 'Template restored successfully.', 'ayecode-connect' ) ) );
 		} else {
-			wp_send_json_error( array( 'message' => __( 'Failed to restore template.', 'wp-ayecode-template-manager' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Failed to restore template.', 'ayecode-connect' ) ) );
 		}
 	}
 
@@ -119,18 +119,18 @@ class TemplateManager {
 		check_ajax_referer( 'ayecode-template-manager', 'nonce' );
 
 		if ( ! current_user_can( 'edit_pages' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-ayecode-template-manager' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'ayecode-connect' ) ) );
 		}
 
 		$post_id = ! empty( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
 
 		if ( ! $post_id ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'wp-ayecode-template-manager' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'ayecode-connect' ) ) );
 		}
 
 		$post = get_post( $post_id );
 		if ( ! $post ) {
-			wp_send_json_error( array( 'message' => __( 'Template not found.', 'wp-ayecode-template-manager' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Template not found.', 'ayecode-connect' ) ) );
 		}
 
 		$info = array(
@@ -260,14 +260,23 @@ class TemplateManager {
 				// Get conditions from template data (if provided by plugin)
 				$conditions = ! empty( $template_data['conditions'] ) ? $template_data['conditions'] : '';
 
+				// Get environment for Router
+				$environment = Environment::get();
+
+				// Detect actual builder being used
+				$detected_builder = Router::get_detected_builder_name( $post_id, $environment );
+
+				// Get edit URL using Router
+				$edit_url = Router::get_edit_url( $post_id, $template_data, $environment );
+
 				$items[] = array(
 					'id'           => $post_id,
 					'name'         => $name_html,
 					'conditions'   => $conditions,
-					'builder'      => ucfirst( $template_data['builder'] ),
+					'builder'      => $detected_builder,
 					'product'      => ucfirst( $product_slug ),
 					'status'       => $post_status,
-					'edit_url'     => Helpers::get_template_edit_url( $post_id ),
+					'edit_url'     => $edit_url,
 					'template_key' => $template_key,
 				);
 			}
