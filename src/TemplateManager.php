@@ -51,7 +51,6 @@ class TemplateManager {
 
 		// AJAX handlers
 		add_action( 'wp_ajax_ayecode_restore_template', array( $this, 'ajax_restore_template' ) );
-		add_action( 'wp_ajax_ayecode_get_template_info', array( $this, 'ajax_get_template_info' ) );
 	}
 
 	/**
@@ -113,41 +112,6 @@ class TemplateManager {
 	}
 
 	/**
-	 * AJAX handler to get template information.
-	 */
-	public function ajax_get_template_info() {
-		check_ajax_referer( 'ayecode-template-manager', 'nonce' );
-
-		if ( ! current_user_can( 'edit_pages' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'ayecode-connect' ) ) );
-		}
-
-		$post_id = ! empty( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
-
-		if ( ! $post_id ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'ayecode-connect' ) ) );
-		}
-
-		$post = get_post( $post_id );
-		if ( ! $post ) {
-			wp_send_json_error( array( 'message' => __( 'Template not found.', 'ayecode-connect' ) ) );
-		}
-
-		$info = array(
-			'id'           => $post_id,
-			'title'        => $post->post_title,
-			'status'       => $post->post_status,
-			'type'         => get_post_meta( $post_id, '_ayecode_template_type', true ),
-			'builder'      => get_post_meta( $post_id, '_ayecode_template_builder', true ),
-			'product'      => get_post_meta( $post_id, '_ayecode_template_product', true ),
-			'template_key' => get_post_meta( $post_id, '_ayecode_template_key', true ),
-			'edit_url'     => Helpers::get_template_edit_url( $post_id ),
-		);
-
-		wp_send_json_success( $info );
-	}
-
-	/**
 	 * Get template status counts for the current view.
 	 *
 	 * @param string $product_slug Optional. Filter by product.
@@ -155,7 +119,7 @@ class TemplateManager {
 	 */
 	public function get_status_counts( $product_slug = '' ) {
 		$args = array(
-			'post_type'      => array( 'page', PostTypes\TemplateCPT::POST_TYPE ),
+			'post_type'      => 'page',
 			'post_status'    => 'any',
 			'posts_per_page' => -1,
 			'fields'         => 'ids',
@@ -252,13 +216,39 @@ class TemplateManager {
 				}
 
 				// Build name with description below
-				$name_html = '<strong>' . esc_html( $template_data['title'] ) . '</strong>';
+                $name_html =  $template_data['icon_class'] ? '<i class="' . esc_attr( $template_data['icon_class'] ) . '"></i> ' : '';
+				$name_html .= '<strong>' . esc_html( $template_data['title'] ) . '</strong>';
 				if ( ! empty( $template_data['description'] ) ) {
 					$name_html .= '<br><small class="text-muted">' . esc_html( $template_data['description'] ) . '</small>';
 				}
 
-				// Get conditions from template data (if provided by plugin)
-				$conditions = ! empty( $template_data['conditions'] ) ? $template_data['conditions'] : '';
+                // maybe add the page title and slug to the name_html
+                if( $post_id ){
+                    $page = get_post( $post_id );
+                    if( $page ){
+                        // if $template_data['type'] === 'page then make the slug a link to the frontend page permalink (if it exists)
+                        $permalink = $template_data['type'] === 'page' && $page->post_status === 'publish' ? get_permalink( $post_id ) : '';
+                        $slug_text = $permalink ? '<a href="'.esc_url($permalink).'" target="_blank">' . esc_attr( $page->post_name ) .'</a>'  : esc_attr( $page->post_name ) ;
+                        $name_html .=  '<br><small class="text-muted">' . esc_html( $page->post_title ) . ' (' . $slug_text. ')</small>';
+
+                    }
+                }
+
+				// Get usage from template data (if provided by plugin)
+                $usage = ! empty( $template_data['usage'] ) ? $template_data['usage'] : '';
+                if( $usage && ! empty( $template_data['global'] )){
+                    $usage = '<span class="badge rounded-pill text-bg-secondary">' . esc_attr( $usage ) . '</span>';
+                }elseif(! empty( $usage )){
+                    $usage = '<span class="badge rounded-pill text-bg-primary">' . esc_attr( $usage ) . '</span>';
+                }
+
+
+                // title
+                $title = $template_data['title'] ? esc_attr( $template_data['title'] ) : '';
+                if( $template_data['icon_class'] ){
+                    $title = '<i class="' . esc_attr( $template_data['icon_class'] ) . '"></i> ' . $title;
+                }
+
 
 				// Get environment for Router
 				$environment = Environment::get();
@@ -270,14 +260,18 @@ class TemplateManager {
 				$edit_url = Router::get_edit_url( $post_id, $template_data, $environment );
 
 				$items[] = array(
-					'id'           => $post_id,
-					'name'         => $name_html,
-					'conditions'   => $conditions,
+					'id'           => absint( $post_id ),
+                    'name'         => esc_attr( $template_data['title'] ),
+                    'type'         => esc_attr( $template_data['type'] ),
+                    'name_desc'    => wp_kses_post( $name_html ),
+					'usage'   => $usage,
 					'builder'      => $detected_builder,
 					'product'      => ucfirst( $product_slug ),
 					'status'       => $post_status,
 					'edit_url'     => $edit_url,
 					'template_key' => $template_key,
+                    'fse_slug'     => $template_data['fse_slug'],
+                    'page_slug'    => $post_id ? $slug = get_post_field( 'post_name', $post_id ) : '',
 				);
 			}
 		}

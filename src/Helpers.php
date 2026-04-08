@@ -57,7 +57,7 @@ class Helpers {
 			'post_title'   => ! empty( $config['title'] ) ? $config['title'] : ucwords( str_replace( '_', ' ', $template_key ) ),
 			'post_content' => '',
 			'post_status'  => 'publish',
-			'post_type'    => 'page' === $config['type'] ? 'page' : PostTypes\TemplateCPT::POST_TYPE,
+			'post_type'    => 'page',
 		);
 
 		$page_args = wp_parse_args( $page_args, $defaults );
@@ -114,7 +114,7 @@ class Helpers {
 	public static function get_template_id_by_key( $template_key ) {
 		$query = new \WP_Query(
 			array(
-				'post_type'      => array( 'page', PostTypes\TemplateCPT::POST_TYPE ),
+				'post_type'      => 'page',
 				'post_status'    => 'any',
 				'posts_per_page' => 1,
 				'meta_key'       => '_ayecode_template_key',
@@ -304,7 +304,7 @@ class Helpers {
 	public static function get_templates_by_product( $product ) {
 		$query = new \WP_Query(
 			array(
-				'post_type'      => array( 'page', PostTypes\TemplateCPT::POST_TYPE ),
+				'post_type'      => 'page',
 				'post_status'    => 'any',
 				'posts_per_page' => -1,
 				'meta_key'       => '_ayecode_template_product',

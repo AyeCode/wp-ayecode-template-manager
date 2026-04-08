@@ -3,7 +3,7 @@
  * Plugin Name: WP AyeCode Template Manager
  * Plugin URI: https://ayecode.io/
  * Description: Centralized template management hub for the AyeCode ecosystem.
- * Version: 1.0.0
+ * Version: 3.0.0-beta
  * Author: AyeCode Ltd
  * Author URI: https://ayecode.io/
  * License: GPL-2.0+
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Define plugin constants.
 if ( ! defined( 'AYECODE_TEMPLATE_MANAGER_VERSION' ) ) {
-	define( 'AYECODE_TEMPLATE_MANAGER_VERSION', '1.0.0' );
+	define( 'AYECODE_TEMPLATE_MANAGER_VERSION', '3.0.0-beta' );
 }
 if ( ! defined( 'AYECODE_TEMPLATE_MANAGER_PLUGIN_FILE' ) ) {
 	define( 'AYECODE_TEMPLATE_MANAGER_PLUGIN_FILE', __FILE__ );
@@ -38,7 +38,6 @@ require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Router.php';
 require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Helpers.php';
 require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Registry.php';
 require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/TemplateManager.php';
-require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/PostTypes/TemplateCPT.php';
 require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Settings.php';
 require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Loader.php';
 
@@ -98,7 +97,7 @@ function ayecode_get_environment( $force_refresh = false ) {
 }
 
 /**
- * Create a template (page or layout CPT).
+ * Create a template page.
  *
  * @param string $template_key Unique key for the template.
  * @param array  $config       Template configuration array.

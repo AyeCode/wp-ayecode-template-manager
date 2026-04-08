@@ -146,7 +146,9 @@ class Registry {
 					'fse_slug'    => ! empty( $template_data['fse_slug'] ) ? sanitize_key( $template_data['fse_slug'] ) : '',
 					'fse_type'    => ! empty( $template_data['fse_type'] ) ? sanitize_key( $template_data['fse_type'] ) : 'wp_template',
 					'type'        => ! empty( $template_data['type'] ) ? $template_data['type'] : 'layout',
-					'conditions'  => ! empty( $template_data['conditions'] ) ? wp_kses_post( $template_data['conditions'] ) : '',
+                    'usage'  => ! empty( $template_data['usage'] ) ? wp_kses_post( $template_data['usage'] ) : '',
+                    'icon_class'  => ! empty( $template_data['icon_class'] ) ? esc_attr( $template_data['icon_class'] ) : '',
+                    'global'  => ! empty( $template_data['global'] ),
 				);
 			}
 

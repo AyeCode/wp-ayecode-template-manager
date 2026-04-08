@@ -86,7 +86,7 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
 
                 'columns' => array(
                     'name'       => array( 'label' => __( 'Template', 'ayecode-connect' ) ),
-                    'conditions' => array( 'label' => __( 'Conditions', 'ayecode-connect' ) ),
+                    'usage' => array( 'label' => __( 'Usage', 'ayecode-connect' ) ),
                     'builder'    => array( 'label' => __( 'Editor', 'ayecode-connect' ) ),
                     'product'    => array( 'label' => __( 'Product', 'ayecode-connect' ) ),
                 ),
@@ -129,8 +129,8 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
                     'ajax_action_bulk' => 'bulk_template_action',
 
                     'columns' => array(
-                        'name'       => array( 'label' => __( 'Template', 'ayecode-connect' ) ),
-                        'conditions' => array( 'label' => __( 'Conditions', 'ayecode-connect' ) ),
+                        'name_desc'       => array( 'label' => __( 'Template', 'ayecode-connect' ) ),
+                        'usage' => array( 'label' => __( 'Usage', 'ayecode-connect' ) ),
                         'builder'    => array( 'label' => __( 'Editor', 'ayecode-connect' ) ),
                     ),
 
@@ -155,11 +155,16 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
 //                        'restore' => __( 'Restore to Default', 'ayecode-connect' ),
 //                    ),
                     'row_actions' => [
-                        'restore' => [
-                            'label' => 'Restore to Default',
-                            'icon' => 'fa-solid fa-rotate-left',
-                            'ajax_action' => 'restore_template',
-//                            'show_if' => "item.status === 'inactive'"
+//                        'restore' => [
+//                            'label' => 'Restore to Default',
+//                            'icon' => 'fa-solid fa-rotate-left',
+//                            'ajax_action' => 'restore_template',
+////                            'show_if' => "item.status === 'inactive'"
+//                        ],
+                        'settings' => [
+                            'label' => 'Settings',
+                            'icon' => 'fa-solid fa-gear',
+                            'action' => 'edit'
                         ],
                         'edit' => [
                             'label' => __( 'Edit', 'ayecode-connect' ),
@@ -178,7 +183,70 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
                     ]
                 ),
 
-                // No modal_config - product sections are read-only, plugins control creation
+                // settings modal
+                'modal_config' => [
+                    'title_add'  => __( 'Add New Template', 'ayecode-connect' ),
+                    'title_edit' => __( 'Edit Template Settings', 'ayecode-connect' ),
+                    'ajax_action_create' => 'add_template',
+                    'ajax_action_update' => 'update_template',
+//                    'ajax_action_delete' => 'delete_iconx',
+
+                    'fields' => [
+                        [
+                            'id'      => 'rename_info',
+                            'type'    => 'alert',
+                            'alert_type' => 'danger',
+                            'description' => __( 'Changing the icon identifier will break all current usage of the icon.', 'ayecode-connect' ),
+                            'show_if' => "[%id%] != null && [%id%] != ''"
+                        ],
+                        [
+                            'id'      => 'type',
+                            'type'    => 'select',
+                            'label'   => __( 'Type', 'ayecode-connect' ),
+                            'description'    => __( 'Select the type of template', 'ayecode-connect' ),
+                            'options' => [
+                                '' => __( 'Select template type', 'ayecode-connect' ),
+                                'add-listing' => __( 'Add Listing', 'ayecode-connect' ),
+                                'single' => __( 'Single', 'ayecode-connect' ),
+                                'archive' => __( 'Archive', 'ayecode-connect' ),
+                                'archive-item' => __( 'Archive Item', 'ayecode-connect' ),
+                                'map-popup' => __( 'Map Popup', 'ayecode-connect' ),
+//                                'single' => __( 'Single', 'ayecode-connect' ),
+                            ],
+                            'extra_attributes' => ['required' => true],
+                            'show_if' => "[%id%] == null || [%id%] == ''"
+                        ],
+                        [
+                            'id'      => 'post_type',
+                            'type'    => 'select',
+                            'label'   => __( 'Post Type', 'ayecode-connect' ),
+                            'description'    => __( 'Select the post type this should apply to', 'ayecode-connect' ),
+                            'options' => [
+                                '' => __( 'Select post type', 'ayecode-connect' ),
+                                'gd_place' => __( 'Places', 'ayecode-connect' ),
+                                'gd_event' => __( 'Event', 'ayecode-connect' ),
+                            ],
+                            'extra_attributes' => ['required' => true],
+                            'show_if' => "[%id%] == null || [%id%] == ''",
+                        ],
+                        [
+                            'id'      => 'name',
+                            'type'    => 'text',
+                            'label'   => __( 'Name', 'ayecode-connect' ),
+                            'description'    => __( 'A friendly name for the template', 'ayecode-connect' ),
+                            'extra_attributes' => ['required' => true]
+//                            'show_if' => "[%id%] == null || [%id%] == ''"
+                        ],
+                        [
+                            'id'       => 'page_slug',
+                            'type'     => 'slug',
+                            'label'    => __( 'Page Slug', 'ayecode-connect' ),
+                            'placeholder' => __( 'add-new-event', 'ayecode-connect' ),
+                            'description' => __( 'This is the slug used when the page is viewed', 'ayecode-connect' ),
+//                            'show_if' => "[%icon_type%] == 'code' && ( [%id%] == null || [%id%] == '' )"
+                        ],
+                    ]
+                ],
             );
         }
 
@@ -301,7 +369,7 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
             array(
                 'post_title'   => $name,
                 'post_content' => $description,
-                'post_type'    => PostTypes\TemplateCPT::POST_TYPE,
+                'post_type'    => 'page',
                 'post_status'  => 'publish',
             )
         );
@@ -344,6 +412,8 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
     private function handle_update_template( $post_data ) {
         $data = ! empty( $post_data['data'] ) ? json_decode( stripslashes( $post_data['data'] ), true ) : array();
 
+        print_r($data);exit;
+
         $id          = ! empty( $data['id'] ) ? absint( $data['id'] ) : 0;
         $name        = ! empty( $data['name'] ) ? sanitize_text_field( $data['name'] ) : '';
         $builder     = ! empty( $data['builder'] ) ? sanitize_text_field( $data['builder'] ) : 'gutenberg';
@@ -355,9 +425,9 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
             wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'ayecode-connect' ) ) );
         }
 
-        // Verify the post exists and is a template.
-        $template = PostTypes\TemplateCPT::get_template( $id );
-        if ( ! $template ) {
+        // Verify the post exists and is a page.
+        $template = get_post( $id );
+        if ( ! $template || 'page' !== $template->post_type ) {
             wp_send_json_error( array( 'message' => __( 'Template not found.', 'ayecode-connect' ) ) );
         }
 
@@ -413,9 +483,9 @@ class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
             wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'ayecode-connect' ) ) );
         }
 
-        // Verify the post exists and is a template.
-        $template = PostTypes\TemplateCPT::get_template( $id );
-        if ( ! $template ) {
+        // Verify the post exists and is a page.
+        $template = get_post( $id );
+        if ( ! $template || 'page' !== $template->post_type ) {
             wp_send_json_error( array( 'message' => __( 'Template not found.', 'ayecode-connect' ) ) );
         }
 

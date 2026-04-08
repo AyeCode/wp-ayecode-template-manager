@@ -2,8 +2,7 @@
 /**
  * Main loader class for the WP AyeCode Template Manager plugin.
  *
- * Orchestrates the initialization of all plugin components including CPT registration
- * and settings framework integration.
+ * Orchestrates the initialization of all plugin components and settings framework integration.
  *
  * @package AyeCode\Templates
  */
@@ -51,9 +50,6 @@ class Loader {
 	 * Hook into WordPress actions and filters to set up plugin functionality.
 	 */
 	private function init_hooks() {
-		// Initialize custom post type.
-		PostTypes\TemplateCPT::instance();
-
 		// Initialize template manager (registers post statuses, AJAX handlers).
 		TemplateManager::instance();
 

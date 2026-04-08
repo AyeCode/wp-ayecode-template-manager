@@ -1,24 +1,24 @@
 {
-    "name": "ayecode/wp-ayecode-template-manager",
-    "description": "Centralized template management system for AyeCode WordPress plugins",
-    "type": "wordpress-plugin",
-    "license": "GPL-2.0-or-later",
-    "authors": [
-        {
-            "name": "AyeCode Ltd",
-            "email": "support@ayecode.io",
-            "homepage": "https://ayecode.io"
-        }
-    ],
-    "require": {
-        "php": ">=7.4",
-        "ayecode/ayecode-settings-framework": "^1.0"
-    },
-    "autoload": {
-        "psr-4": {
-            "AyeCode\\Templates\\": "src/"
-        }
-    },
-    "minimum-stability": "stable",
-    "prefer-stable": true
+  "name": "ayecode/wp-ayecode-template-manager",
+  "version": "3.0.0-beta",
+  "description": "Centralized template management system for AyeCode WordPress plugins",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "authors": [
+    {
+      "name": "AyeCode Ltd",
+      "email": "support@ayecode.io",
+      "homepage": "https://ayecode.io"
+    }
+  ],
+  "require": {
+    "php": ">=7.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "AyeCode\\Templates\\": "src/"
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
 }
