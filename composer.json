@@ -1,6 +1,6 @@
 {
   "name": "ayecode/wp-ayecode-template-manager",
-  "version": "3.0.1-beta",
+  "version": "3.0.2-beta",
   "description": "Centralized template management system for AyeCode WordPress plugins",
   "type": "library",
   "license": "GPL-2.0-or-later",
@@ -16,9 +16,9 @@
     "php": ">=7.4"
   },
   "autoload": {
-    "psr-4": {
-      "AyeCode\\Templates\\": "src/"
-    }
+    "files": [
+      "wp-ayecode-template-manager.php"
+    ]
   },
   "config": {
     "optimize-autoloader": true,

@@ -3,7 +3,7 @@
  * Plugin Name: WP AyeCode Template Manager
  * Plugin URI: https://ayecode.io/
  * Description: Centralized template management hub for the AyeCode ecosystem.
- * Version: 3.0.1-beta
+ * Version: 3.0.2-beta
  * Author: AyeCode Ltd
  * Author URI: https://ayecode.io/
  * License: GPL-2.0+
@@ -23,7 +23,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Define plugin constants.
 if ( ! defined( 'AYECODE_TEMPLATE_MANAGER_VERSION' ) ) {
-	define( 'AYECODE_TEMPLATE_MANAGER_VERSION', '3.0.1-beta' );
+	define( 'AYECODE_TEMPLATE_MANAGER_VERSION', '3.0.2-beta' );
+}else{
+    return; // bail if already defined
 }
 if ( ! defined( 'AYECODE_TEMPLATE_MANAGER_PLUGIN_FILE' ) ) {
 	define( 'AYECODE_TEMPLATE_MANAGER_PLUGIN_FILE', __FILE__ );
