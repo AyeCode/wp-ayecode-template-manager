@@ -3,7 +3,7 @@
  * Plugin Name: WP AyeCode Template Manager
  * Plugin URI: https://ayecode.io/
  * Description: Centralized template management hub for the AyeCode ecosystem.
- * Version: 3.0.2-beta
+ * Version: 3.0.3-beta
  * Author: AyeCode Ltd
  * Author URI: https://ayecode.io/
  * License: GPL-2.0+
@@ -21,133 +21,92 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Define plugin constants.
-if ( ! defined( 'AYECODE_TEMPLATE_MANAGER_VERSION' ) ) {
-	define( 'AYECODE_TEMPLATE_MANAGER_VERSION', '3.0.2-beta' );
+// AyeCode Package Loader (v1.0.0)
+( function () {
+    // -------------------------------------------------------------------------
+    // CONFIGURATION
+    // -------------------------------------------------------------------------
+    $registry_key    = 'ayecode_template_manager_registry';
+    $this_version    = '3.0.3-beta';
+    $this_path       = dirname( __FILE__ );
+    $prefix          = 'AyeCode\\Templates\\';
 
-    if ( ! defined( 'AYECODE_TEMPLATE_MANAGER_PLUGIN_FILE' ) ) {
-        define( 'AYECODE_TEMPLATE_MANAGER_PLUGIN_FILE', __FILE__ );
-    }
-    if ( ! defined( 'AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR' ) ) {
-        define( 'AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-    }
+    // Class Bootstrapping
+    $loader_class    = 'AyeCode\\Templates\\Loader'; // Leave empty '' to disable
+    $loader_hook     = 'plugins_loaded';
+    $loader_priority = 10;
 
-
-// Load plugin classes.
-    require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Environment.php';
-    require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Router.php';
-    require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Helpers.php';
-    require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Registry.php';
-    require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/TemplateManager.php';
-    require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Settings.php';
-    require_once AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR . 'src/Loader.php';
+    // Constants to define ONLY if this package version wins the negotiation
+    // Leave array empty if your package doesn't require any path/version constants
+    $winning_constants = [
+            'AYECODE_TEMPLATE_MANAGER_VERSION'     => $this_version,
+            'AYECODE_TEMPLATE_MANAGER_PLUGIN_DIR'  => $this_path . '/',
+            'AYECODE_TEMPLATE_MANAGER_PLUGIN_FILE' => $this_path . '/wp-ayecode-template-manager.php',
+    ];
+    // -------------------------------------------------------------------------
+    // DO NOT EDIT BELOW THIS LINE. CORE PACKAGE NEGOTIATION LOGIC.
+    // -------------------------------------------------------------------------
 
     /**
-     * Initialize the plugin.
-     *
-     * Instantiate the main Loader class on the plugins_loaded hook to ensure
-     * WordPress core and other plugins are fully loaded.
+     * Step 1: Version Negotiation (Priority 1)
      */
-    function ayecode_template_manager_init() {
-        // Check if the AyeCode Settings Framework is available.
-        if ( ! class_exists( '\AyeCode\SettingsFramework\Settings_Framework' ) ) {
-            add_action( 'admin_notices', 'ayecode_template_manager_missing_framework_notice' );
+    add_action( 'plugins_loaded', function () use ( $registry_key, $this_version, $this_path ) {
+        if ( empty( $GLOBALS[$registry_key] ) || version_compare( $this_version, $GLOBALS[$registry_key]['version'], '>' ) ) {
+            $GLOBALS[$registry_key] = [
+                    'version' => $this_version,
+                    'path'    => $this_path
+            ];
+        }
+    }, 1 );
+
+    /**
+     * Step 2: Lazy Loading Registration (Priority 2)
+     */
+    add_action( 'plugins_loaded', function () use ( $registry_key, $this_path, $prefix ) {
+        if ( empty( $GLOBALS[$registry_key] ) || $GLOBALS[$registry_key]['path'] !== $this_path ) {
             return;
         }
 
-        // Initialize the plugin loader.
-        \AyeCode\Templates\Loader::instance();
-    }
-    add_action( 'plugins_loaded', 'ayecode_template_manager_init' );
+        $base_dir = $this_path . '/src/';
+
+        spl_autoload_register( function ( $class ) use ( $prefix, $base_dir ) {
+            if ( strpos( $class, $prefix ) !== 0 ) {
+                return;
+            }
+
+            $relative_class = substr( $class, strlen( $prefix ) );
+            $file = $base_dir . str_replace( '\\', '/', $relative_class ) . '.php';
+
+            if ( file_exists( $file ) ) {
+                require $file;
+            }
+        }, true, true );
+
+    }, 2 );
 
     /**
-     * Display admin notice if the Settings Framework is missing.
+     * Step 3: Package Initialization (Configurable Hook/Priority)
      */
-    function ayecode_template_manager_missing_framework_notice() {
-        ?>
-        <div class="notice notice-error">
-            <p>
-                <?php
-                echo wp_kses_post(
-                        sprintf(
-                        /* translators: %s: plugin name */
-                                __( '<strong>%s</strong> requires the AyeCode Settings Framework to be installed and activated.', 'ayecode-connect' ),
-                                'WP AyeCode Template Manager'
-                        )
-                );
-                ?>
-            </p>
-        </div>
-        <?php
+    if ( ! empty( $loader_class ) ) {
+        add_action( $loader_hook, function () use ( $registry_key, $this_path, $loader_class, $winning_constants ) {
+            // Bail if we didn't win the version negotiation
+            if ( empty( $GLOBALS[$registry_key] ) || $GLOBALS[$registry_key]['path'] !== $this_path ) {
+                return;
+            }
+
+            // Define package constants dynamically for the winning version
+            foreach ( $winning_constants as $name => $value ) {
+                if ( ! defined( $name ) ) {
+                    define( $name, $value );
+                }
+            }
+
+            // class_exists() triggers the autoloader registered in Step 2
+            if ( class_exists( $loader_class ) ) {
+                // Boot the class with zero arguments required
+                new $loader_class();
+            }
+        }, $loader_priority );
     }
 
-// ============================================================================
-// Global Helper Functions
-// ============================================================================
-
-    /**
-     * Get the current environment configuration.
-     *
-     * Returns detected theme type and active page builders.
-     *
-     * @param bool $force_refresh Force refresh the environment cache.
-     * @return array Environment array with detected features.
-     */
-    function ayecode_get_environment( $force_refresh = false ) {
-        return \AyeCode\Templates\Helpers::get_environment( $force_refresh );
-    }
-
-    /**
-     * Create a template page.
-     *
-     * @param string $template_key Unique key for the template.
-     * @param array  $config       Template configuration array.
-     * @return int|false Post ID on success, false on failure.
-     */
-    function ayecode_create_template( $template_key, $config ) {
-        return \AyeCode\Templates\Helpers::create_template( $template_key, $config );
-    }
-
-    /**
-     * Get a template post ID by its key.
-     *
-     * @param string $template_key The template key.
-     * @return int|false Post ID if found, false otherwise.
-     */
-    function ayecode_get_template_id( $template_key ) {
-        return \AyeCode\Templates\Helpers::get_template_id_by_key( $template_key );
-    }
-
-    /**
-     * Get the edit URL for a template.
-     *
-     * @param int $post_id The post ID.
-     * @return string The edit URL.
-     */
-    function ayecode_get_template_edit_url( $post_id ) {
-        return \AyeCode\Templates\Helpers::get_template_edit_url( $post_id );
-    }
-
-    /**
-     * Restore a template to its default state.
-     *
-     * @param int $post_id The post ID.
-     * @return bool True on success, false on failure.
-     */
-    function ayecode_restore_template( $post_id ) {
-        return \AyeCode\Templates\Helpers::restore_template( $post_id );
-    }
-
-    /**
-     * Delete a template by key.
-     *
-     * @param string $template_key The template key.
-     * @return bool True on success, false on failure.
-     */
-    function ayecode_delete_template( $template_key ) {
-        return \AyeCode\Templates\Helpers::delete_template( $template_key );
-    }
-
-
-}
-
+} )();

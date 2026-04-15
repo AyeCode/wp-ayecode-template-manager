@@ -17,59 +17,51 @@ namespace AyeCode\Templates;
 class Loader {
 
 	/**
-	 * Single instance of the class.
-	 *
-	 * @var Loader
-	 */
-	private static $instance = null;
-
-	/**
-	 * Get the singleton instance.
-	 *
-	 * @return Loader
-	 */
-	public static function instance() {
-		if ( is_null( self::$instance ) ) {
-			self::$instance = new self();
-		}
-		return self::$instance;
-	}
-
-	/**
 	 * Constructor.
 	 *
-	 * Initialize hooks and load plugin components.
+	 * Checks dependencies and initializes plugin hooks.
 	 */
-	private function __construct() {
+	public function __construct() {
+
+		if ( ! class_exists( '\AyeCode\SettingsFramework\Settings_Framework' ) ) {
+			add_action( 'admin_notices', array( $this, 'missing_framework_notice' ) );
+			return;
+		}
+
 		$this->init_hooks();
 	}
 
 	/**
+	 * Display an admin notice when the AyeCode Settings Framework is missing.
+	 */
+	public function missing_framework_notice() {
+		?>
+		<div class="notice notice-error">
+			<p>
+				<?php
+				echo wp_kses_post(
+					sprintf(
+						/* translators: %s: plugin name */
+						__( '<strong>%s</strong> requires the AyeCode Settings Framework to be installed and activated.', 'ayecode-connect' ),
+						'WP AyeCode Template Manager'
+					)
+				);
+				?>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Initialize plugin hooks.
-	 *
-	 * Hook into WordPress actions and filters to set up plugin functionality.
 	 */
 	private function init_hooks() {
-		// Initialize template manager (registers post statuses, AJAX handlers).
 		TemplateManager::instance();
 
-		// Initialize settings framework.
 		if ( is_admin() ) {
 			Settings::instance();
 		}
 
-		// Load text domain for translations.
-		add_action( 'init', array( $this, 'load_textdomain' ) );
 	}
 
-	/**
-	 * Load plugin text domain for translations.
-	 */
-	public function load_textdomain() {
-		load_plugin_textdomain(
-			'ayecode-connect',
-			false,
-			dirname( plugin_basename( AYECODE_TEMPLATE_MANAGER_PLUGIN_FILE ) ) . '/languages'
-		);
-	}
 }
