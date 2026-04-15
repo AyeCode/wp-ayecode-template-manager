@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     // CONFIGURATION
     // -------------------------------------------------------------------------
     $registry_key    = 'ayecode_template_manager_registry';
-    $this_version    = '3.0.4-beta';
+    $this_version    = '3.0.5-beta';
     $this_path       = dirname( __FILE__ );
     $prefix          = 'AyeCode\\Templates\\';
 
