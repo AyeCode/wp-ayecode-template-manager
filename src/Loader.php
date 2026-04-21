@@ -19,7 +19,8 @@ class Loader {
 	/**
 	 * Constructor.
 	 *
-	 * Checks dependencies and initializes plugin hooks.
+	 * Registers all hooks for the package. No logic is executed here directly;
+	 * everything is delegated to other classes via WordPress hooks.
 	 */
 	public function __construct() {
 
@@ -28,7 +29,13 @@ class Loader {
 			return;
 		}
 
-		$this->init_hooks();
+		// Boot at priority 11 so both singletons initialise after this Loader
+		// runs at priority 10, but before `init` fires.
+		add_action( 'plugins_loaded', array( 'AyeCode\Templates\TemplateManager', 'instance' ), 11 );
+
+		if ( is_admin() ) {
+			add_action( 'plugins_loaded', array( 'AyeCode\Templates\Settings', 'instance' ), 11 );
+		}
 	}
 
 	/**
@@ -50,18 +57,6 @@ class Loader {
 			</p>
 		</div>
 		<?php
-	}
-
-	/**
-	 * Initialize plugin hooks.
-	 */
-	private function init_hooks() {
-		TemplateManager::instance();
-
-		if ( is_admin() ) {
-			Settings::instance();
-		}
-
 	}
 
 }
