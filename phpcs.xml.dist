@@ -47,10 +47,10 @@
     <config name="minimum_supported_wp_version" value="5.0" />
     <config name="testVersion" value="7.4-" />
 
-    <!-- All AyeCode packages share the "ayecode" text domain. -->
+    <!-- All AyeCode packages share the "ayecode-connect" text domain. -->
     <rule ref="WordPress.WP.I18n">
         <properties>
-            <property name="text_domain" type="array" value="ayecode" />
+            <property name="text_domain" type="array" value="ayecode-connect" />
         </properties>
     </rule>
 
