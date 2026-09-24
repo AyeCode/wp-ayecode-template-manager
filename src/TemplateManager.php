@@ -266,7 +266,7 @@ class TemplateManager {
                     'name_desc'    => wp_kses_post( $name_html ),
 					'usage'   => $usage,
 					'builder'      => $detected_builder,
-					'product'      => ucfirst( $product_slug ),
+					'product'      => ! empty( $product_data['group_label'] ) ? $product_data['group_label'] : ucfirst( $product_slug ),
 					'status'       => $post_status,
 					'edit_url'     => $edit_url,
 					'template_key' => $template_key,
