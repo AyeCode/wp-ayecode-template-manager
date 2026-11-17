@@ -2,7 +2,7 @@
 /**
  * Template Manager Class
  *
- * Handles AJAX operations and template management functionality.
+ * Turns registered templates into the rows the admin screen displays.
  *
  * @package AyeCode\Templates
  */
@@ -11,8 +11,6 @@ namespace AyeCode\Templates;
 
 /**
  * TemplateManager class.
- *
- * Manages template CRUD operations and AJAX handlers.
  */
 class TemplateManager {
 
@@ -39,240 +37,103 @@ class TemplateManager {
 	 * Constructor.
 	 */
 	private function __construct() {
-		$this->init_hooks();
 	}
 
 	/**
-	 * Initialize hooks.
-	 */
-	private function init_hooks() {
-		// Register custom post statuses
-		add_action( 'init', array( $this, 'register_post_statuses' ) );
-
-		// AJAX handlers
-		add_action( 'wp_ajax_ayecode_restore_template', array( $this, 'ajax_restore_template' ) );
-	}
-
-	/**
-	 * Register custom post statuses for templates.
-	 */
-	public function register_post_statuses() {
-		// Customized status
-		register_post_status(
-			'customized',
-			array(
-				'label'                     => _x( 'Customized', 'post status', 'ayecode-connect' ),
-				'public'                    => true,
-				'exclude_from_search'       => false,
-				'show_in_admin_all_list'    => true,
-				'show_in_admin_status_list' => true,
-				/* translators: %s: number of customized templates */
-				'label_count'               => _n_noop( 'Customized <span class="count">(%s)</span>', 'Customized <span class="count">(%s)</span>', 'ayecode-connect' ),
-			)
-		);
-
-		// Default status
-		register_post_status(
-			'default',
-			array(
-				'label'                     => _x( 'Default', 'post status', 'ayecode-connect' ),
-				'public'                    => true,
-				'exclude_from_search'       => false,
-				'show_in_admin_all_list'    => true,
-				'show_in_admin_status_list' => true,
-				/* translators: %s: number of default templates */
-				'label_count'               => _n_noop( 'Default <span class="count">(%s)</span>', 'Default <span class="count">(%s)</span>', 'ayecode-connect' ),
-			)
-		);
-	}
-
-	/**
-	 * AJAX handler to restore a template to default.
-	 */
-	public function ajax_restore_template() {
-		check_ajax_referer( 'ayecode-template-manager', 'nonce' );
-
-		if ( ! current_user_can( 'edit_pages' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'ayecode-connect' ) ) );
-		}
-
-		$post_id = ! empty( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
-
-		if ( ! $post_id ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'ayecode-connect' ) ) );
-		}
-
-		$result = Helpers::restore_template( $post_id );
-
-		if ( $result ) {
-			wp_send_json_success( array( 'message' => __( 'Template restored successfully.', 'ayecode-connect' ) ) );
-		} else {
-			wp_send_json_error( array( 'message' => __( 'Failed to restore template.', 'ayecode-connect' ) ) );
-		}
-	}
-
-	/**
-	 * Get template status counts for the current view.
+	 * Build a row ID the admin screen can hand back to us.
 	 *
-	 * @param string $product_slug Optional. Filter by product.
-	 * @return array Status counts.
+	 * Page IDs are not used because a row can exist without a page (missing,
+	 * or block theme only).
+	 *
+	 * @param string $product_slug Product slug.
+	 * @param string $template_key Template key.
+	 * @return string
 	 */
-	public function get_status_counts( $product_slug = '' ) {
-		$args = array(
-			'post_type'      => 'page',
-			'post_status'    => 'any',
-			'posts_per_page' => -1,
-			'fields'         => 'ids',
-		);
+	public static function make_row_id( $product_slug, $template_key ) {
+		return $product_slug . ':' . $template_key;
+	}
 
-		if ( ! empty( $product_slug ) ) {
-			$args['meta_query'] = array(
-				array(
-					'key'   => '_ayecode_template_product',
-					'value' => $product_slug,
-				),
-			);
+	/**
+	 * Resolve a row ID back to its registered template.
+	 *
+	 * @param string $row_id Row ID from the admin screen.
+	 * @return array|false Array with 'product', 'key', 'data' and 'group', or false.
+	 */
+	public static function resolve_row_id( $row_id ) {
+		$row_id = (string) $row_id;
+
+		if ( false === strpos( $row_id, ':' ) ) {
+			return false;
 		}
 
-		$query = new \WP_Query( $args );
+		list( $product_slug, $template_key ) = explode( ':', $row_id, 2 );
 
-		$counts = array(
-			'all'        => 0,
-			'publish'    => 0,
-			'draft'      => 0,
-			'customized' => 0,
-			'default'    => 0,
-		);
+		$registry = Registry::instance();
+		$group    = $registry->get_product_templates( $product_slug );
+		$template = $registry->get_template( $product_slug, $template_key );
 
-		foreach ( $query->posts as $post_id ) {
-			$status = get_post_status( $post_id );
-
-			$counts['all']++;
-
-			if ( isset( $counts[ $status ] ) ) {
-				$counts[ $status ]++;
-			}
+		if ( ! $group || ! $template ) {
+			return false;
 		}
 
-		return $counts;
+		return array(
+			'product' => $product_slug,
+			'key'     => $template_key,
+			'data'    => $template,
+			'group'   => $group,
+		);
 	}
 
 	/**
 	 * Get templates formatted for list table display.
 	 *
-	 * Uses Registry as the source of truth - only displays templates that are registered.
-	 *
-	 * @param array $args Query arguments.
+	 * @param array $args Query arguments: 'status' (all|customized|attention) and 'product'.
 	 * @return array Templates data with items and counts.
 	 */
 	public function get_templates_for_display( $args = array() ) {
-		$defaults = array(
-			'status'  => 'all',
-			'product' => '',
+		$args = wp_parse_args(
+			$args,
+			array(
+				'status'  => 'all',
+				'product' => '',
+			)
 		);
 
-		$args = wp_parse_args( $args, $defaults );
-
-		// Get registered templates from Registry (source of truth)
-		$registry             = Registry::instance();
-		$registered_templates = $registry->get_registered_templates();
+		$registry    = Registry::instance();
+		$environment = Environment::get();
 
 		$items  = array();
 		$counts = array(
 			'all'        => 0,
-			'publish'    => 0,
-			'draft'      => 0,
 			'customized' => 0,
-			'default'    => 0,
+			'attention'  => 0,
 		);
 
-		// Loop through registered templates
-		foreach ( $registered_templates as $product_slug => $product_data ) {
-			// Filter by product if specified
+		foreach ( $registry->get_registered_templates() as $product_slug => $product_data ) {
 			if ( ! empty( $args['product'] ) && $args['product'] !== $product_slug ) {
 				continue;
 			}
 
 			foreach ( $product_data['items'] as $template_key => $template_data ) {
-				$post_id = $template_data['post_id'];
+				$row = $this->build_row( $product_slug, $product_data, $template_key, $template_data, $environment );
 
-				// Only get post status, nothing else
-				$post_status = get_post_status( $post_id );
+				++$counts['all'];
+				if ( State::STATE_CUSTOMIZED === $row['state_key'] ) {
+					++$counts['customized'];
+				}
+				if ( $row['attention'] ) {
+					++$counts['attention'];
+				}
 
-				// Skip if post doesn't exist
-				if ( ! $post_status ) {
+				if ( 'customized' === $args['status'] && State::STATE_CUSTOMIZED !== $row['state_key'] ) {
 					continue;
 				}
 
-				// Count all statuses
-				$counts['all']++;
-				if ( isset( $counts[ $post_status ] ) ) {
-					$counts[ $post_status ]++;
-				}
-
-				// Filter by status
-				if ( 'all' !== $args['status'] && $post_status !== $args['status'] ) {
+				if ( 'attention' === $args['status'] && ! $row['attention'] ) {
 					continue;
 				}
 
-				// Build name with description below
-                $name_html =  $template_data['icon_class'] ? '<i class="' . esc_attr( $template_data['icon_class'] ) . '"></i> ' : '';
-				$name_html .= '<strong>' . esc_html( $template_data['title'] ) . '</strong>';
-				if ( ! empty( $template_data['description'] ) ) {
-					$name_html .= '<br><small class="text-muted">' . esc_html( $template_data['description'] ) . '</small>';
-				}
-
-                // maybe add the page title and slug to the name_html
-                if( $post_id ){
-                    $page = get_post( $post_id );
-                    if( $page ){
-                        // if $template_data['type'] === 'page then make the slug a link to the frontend page permalink (if it exists)
-                        $permalink = $template_data['type'] === 'page' && $page->post_status === 'publish' ? get_permalink( $post_id ) : '';
-                        $slug_text = $permalink ? '<a href="'.esc_url($permalink).'" target="_blank">' . esc_attr( $page->post_name ) .'</a>'  : esc_attr( $page->post_name ) ;
-                        $name_html .=  '<br><small class="text-muted">' . esc_html( $page->post_title ) . ' (' . $slug_text. ')</small>';
-
-                    }
-                }
-
-				// Get usage from template data (if provided by plugin)
-                $usage = ! empty( $template_data['usage'] ) ? $template_data['usage'] : '';
-                if( $usage && ! empty( $template_data['global'] )){
-                    $usage = '<span class="badge rounded-pill text-bg-secondary">' . esc_attr( $usage ) . '</span>';
-                }elseif(! empty( $usage )){
-                    $usage = '<span class="badge rounded-pill text-bg-primary">' . esc_attr( $usage ) . '</span>';
-                }
-
-
-                // title
-                $title = $template_data['title'] ? esc_attr( $template_data['title'] ) : '';
-                if( $template_data['icon_class'] ){
-                    $title = '<i class="' . esc_attr( $template_data['icon_class'] ) . '"></i> ' . $title;
-                }
-
-
-				// Get environment for Router
-				$environment = Environment::get();
-
-				// Detect actual builder being used
-				$detected_builder = Router::get_detected_builder_name( $post_id, $environment );
-
-				// Get edit URL using Router
-				$edit_url = Router::get_edit_url( $post_id, $template_data, $environment );
-
-				$items[] = array(
-					'id'           => absint( $post_id ),
-                    'name'         => esc_attr( $template_data['title'] ),
-                    'type'         => esc_attr( $template_data['type'] ),
-                    'name_desc'    => wp_kses_post( $name_html ),
-					'usage'   => $usage,
-					'builder'      => $detected_builder,
-					'product'      => ucfirst( $product_slug ),
-					'status'       => $post_status,
-					'edit_url'     => $edit_url,
-					'template_key' => $template_key,
-                    'fse_slug'     => $template_data['fse_slug'],
-                    'page_slug'    => $post_id ? $slug = get_post_field( 'post_name', $post_id ) : '',
-				);
+				$items[] = $row;
 			}
 		}
 
@@ -280,5 +141,180 @@ class TemplateManager {
 			'items'  => $items,
 			'counts' => $counts,
 		);
+	}
+
+	/**
+	 * Build one display row.
+	 *
+	 * @param string $product_slug  Product slug.
+	 * @param array  $product_data  Validated product group.
+	 * @param string $template_key  Template key.
+	 * @param array  $template_data Validated template data.
+	 * @param array  $environment   Environment array.
+	 * @return array
+	 */
+	public function build_row( $product_slug, $product_data, $template_key, $template_data, $environment ) {
+		$post_id  = $template_data['post_id'];
+		$post     = $post_id ? get_post( $post_id ) : null;
+		$is_page  = 'page' === $template_data['type'];
+		$uses_fse = ! empty( $environment['block_theme'] ) && ! empty( $template_data['fse_slug'] );
+
+		$override = Overrides\Manager::find_for_template( $template_data, $product_data, $environment );
+		$state    = State::get( $template_key, $template_data, $environment );
+		$source   = Router::get_source( $post_id, $template_data, $environment, $override );
+		$edit_url = State::STATE_MISSING === $state ? '' : Router::get_edit_url( $post_id, $template_data, $environment, $override );
+
+		$page_published = $post && in_array( $post->post_status, array( 'publish', 'private' ), true );
+		$view_url       = $is_page && $page_published ? get_permalink( $post_id ) : '';
+		$attention      = in_array( $state, array( State::STATE_MISSING, State::STATE_DRAFT ), true ) || ! empty( $override );
+
+		return array(
+			'id'             => self::make_row_id( $product_slug, $template_key ),
+			'template_key'   => $template_key,
+			'product_slug'   => $product_slug,
+			'product'        => esc_html( $product_data['group_label'] ),
+			'name'           => esc_html( $template_data['title'] ),
+			'name_desc'      => $this->render_name( $template_data, $post, $state, $view_url, $uses_fse ),
+			'usage'          => $this->render_usage( $template_data ),
+			'source'         => $this->render_source( $source, $override, $state ),
+			'source_key'     => $source['key'],
+			'state'          => $this->render_state( $state ),
+			'state_key'      => $state,
+			'attention'      => $attention,
+			'type'           => $template_data['type'],
+			'post_id'        => $post_id,
+			'page_slug'      => $post ? $post->post_name : '',
+			'page_title'     => $post ? $post->post_title : '',
+			'assign_page_id' => $post_id,
+			'edit_url'       => $edit_url,
+			'view_url'       => $view_url,
+			'can_view'       => ! empty( $view_url ),
+			'uses_page'      => ! $uses_fse || $is_page,
+			'is_override'    => ! empty( $template_data['is_override'] ),
+			'is_fse'         => $uses_fse,
+			'can_recreate'   => ! $uses_fse || $is_page,
+			'can_configure'  => ! $uses_fse || $is_page,
+			'fse_slug'       => $template_data['fse_slug'],
+			'post_type'      => $template_data['post_type'],
+			'override'       => $override ? array(
+				'builder' => $override['builder'],
+				'label'   => $override['label'],
+				'id'      => $override['id'],
+			) : null,
+		);
+	}
+
+	/**
+	 * Render the Template column.
+	 *
+	 * @param array         $template_data Template data.
+	 * @param \WP_Post|null $post          Page post.
+	 * @param string        $state         State key.
+	 * @param string        $view_url      Front end URL for pages.
+	 * @param bool          $uses_fse      Whether a block template renders this row.
+	 * @return string HTML.
+	 */
+	private function render_name( $template_data, $post, $state, $view_url, $uses_fse ) {
+		$indent = ! empty( $template_data['is_override'] ) ? '<i class="fa-solid fa-turn-up fa-rotate-90 text-muted me-2 ms-2 small"></i>' : '';
+		$icon   = ! empty( $template_data['icon_class'] ) ? '<i class="' . esc_attr( $template_data['icon_class'] ) . ' me-1"></i> ' : '';
+
+		$html  = '<div class="' . ( ! empty( $template_data['is_override'] ) ? 'ps-2' : '' ) . '">';
+		$html .= $indent . $icon . '<strong>' . esc_html( $template_data['title'] ) . '</strong>';
+
+		if ( ! empty( $template_data['description'] ) ) {
+			$html .= '<br><small class="text-muted">' . esc_html( $template_data['description'] ) . '</small>';
+		}
+
+		if ( $post && State::STATE_MISSING !== $state ) {
+			$slug       = $view_url
+				? '<a href="' . esc_url( $view_url ) . '" target="_blank" rel="noopener">/' . esc_html( $post->post_name ) . '/</a>'
+				: '';
+			$page_label = $uses_fse && 'page' !== $template_data['type']
+				? __( 'Classic page (unused on block themes)', 'ayecode-connect' )
+				: $post->post_title;
+
+			$html .= '<br><small class="text-muted"><i class="fa-regular fa-file me-1"></i>' . esc_html( $page_label ) . ( $slug ? ' ' . $slug : '' ) . '</small>';
+		} elseif ( ! $uses_fse && ! empty( $template_data['post_id'] ) ) {
+			$html .= '<br><small class="text-danger">' . sprintf(
+				/* translators: %d: page ID */
+				esc_html__( 'Page #%d no longer exists.', 'ayecode-connect' ),
+				absint( $template_data['post_id'] )
+			) . '</small>';
+		} elseif ( ! $uses_fse ) {
+			$html .= '<br><small class="text-danger">' . esc_html__( 'No page is assigned.', 'ayecode-connect' ) . '</small>';
+		}
+
+		$html .= '</div>';
+
+		return $html;
+	}
+
+	/**
+	 * Render the Applies To column.
+	 *
+	 * @param array $template_data Template data.
+	 * @return string HTML.
+	 */
+	private function render_usage( $template_data ) {
+		if ( empty( $template_data['usage'] ) ) {
+			return '';
+		}
+
+		$class = ! empty( $template_data['global'] ) ? 'text-bg-secondary' : 'text-bg-primary';
+
+		return '<span class="badge rounded-pill ' . $class . '">' . esc_html( $template_data['usage'] ) . '</span>';
+	}
+
+	/**
+	 * Render the Source column.
+	 *
+	 * @param array      $source   Source info from Router.
+	 * @param array|null $override Theme builder override, if any.
+	 * @param string     $state    State key.
+	 * @return string HTML.
+	 */
+	private function render_source( $source, $override, $state ) {
+		if ( ! empty( $override ) ) {
+			$title = __( 'A theme builder template takes over rendering. The page assigned to this template is not used while it is active.', 'ayecode-connect' );
+
+			$html = '<span class="text-warning-emphasis" title="' . esc_attr( $title ) . '" data-bs-toggle="tooltip"><i class="fa-solid fa-triangle-exclamation me-1"></i>' . esc_html( $override['label'] ) . '</span>';
+
+			if ( ! empty( $override['post_type_label'] ) ) {
+				$html .= '<br><small class="text-muted">' . sprintf(
+					/* translators: %s: post type name */
+					esc_html__( 'Applies to %s', 'ayecode-connect' ),
+					esc_html( $override['post_type_label'] )
+				) . '</small>';
+			}
+
+			return $html;
+		}
+
+		if ( State::STATE_MISSING === $state ) {
+			return '<span class="text-muted">' . esc_html__( 'Nothing', 'ayecode-connect' ) . '</span>';
+		}
+
+		return esc_html( $source['label'] );
+	}
+
+	/**
+	 * Render the State column.
+	 *
+	 * @param string $state State key.
+	 * @return string HTML.
+	 */
+	private function render_state( $state ) {
+		$labels  = State::labels();
+		$classes = array(
+			State::STATE_DEFAULT    => 'text-bg-light border',
+			State::STATE_CUSTOMIZED => 'text-bg-primary',
+			State::STATE_MISSING    => 'text-bg-danger',
+			State::STATE_DRAFT      => 'text-bg-warning',
+		);
+
+		$label = isset( $labels[ $state ] ) ? $labels[ $state ] : ucfirst( $state );
+		$class = isset( $classes[ $state ] ) ? $classes[ $state ] : 'text-bg-secondary';
+
+		return '<span class="badge rounded-pill ' . esc_attr( $class ) . '">' . esc_html( $label ) . '</span>';
 	}
 }

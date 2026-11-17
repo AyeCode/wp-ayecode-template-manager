@@ -35,6 +35,7 @@ class Loader {
 
 		if ( is_admin() ) {
 			add_action( 'plugins_loaded', array( 'AyeCode\Templates\Settings', 'instance' ), 11 );
+			add_action( 'plugins_loaded', array( 'AyeCode\Templates\PagesList', 'instance' ), 11 );
 		}
 	}
 
@@ -58,5 +59,4 @@ class Loader {
 		</div>
 		<?php
 	}
-
 }

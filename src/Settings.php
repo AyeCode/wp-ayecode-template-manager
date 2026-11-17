@@ -15,576 +15,695 @@ namespace AyeCode\Templates;
  */
 class Settings extends \AyeCode\SettingsFramework\Settings_Framework {
 
-    /**
-     * Single instance of the class.
-     *
-     * @var Settings
-     */
-    private static $instance = null;
-
-    /**
-     * Framework configuration properties.
-     */
-    protected $option_name   = 'ayecode-template-manager';
-    protected $page_slug     = 'ayecode-templates';
-    protected $plugin_name   = '<i class="fa-solid fa-layer-group me-2 text-primary-emphasis fs-4 mb-1"></i> Templates';
-    protected $menu_title    = 'Templates';
-    protected $page_title    = 'Template Manager';
-    protected $menu_icon     = 'dashicons-layout';
-    protected $menu_position = null;
-    protected $parent_slug   = 'themes.php';
-
-    /**
-     * Get the singleton instance.
-     *
-     * @return Settings
-     */
-    public static function instance() {
-        if ( is_null( self::$instance ) ) {
-            self::$instance = new self();
-        }
-        return self::$instance;
-    }
-
-    /**
-     * Constructor.
-     */
-    public function __construct() {
-        parent::__construct();
-
-        // Hook into AJAX actions for list_table operations.
-        add_action( 'asf_execute_tool_' . $this->page_slug, array( $this, 'ajax_actions' ), 10, 2 );
-    }
-
-    /**
-     * Get the settings configuration.
-     *
-     * Defines the list_table interface with filterable sections for product contexts.
-     *
-     * @return array Configuration array with sections and fields.
-     */
-    public function get_config() {
-        // Get registered templates from the registry
-        $registry = Registry::instance();
-        $registered_templates = $registry->get_registered_templates();
-
-        // Build sections dynamically from registered templates
-        $sections = array();
-
-        // Add "All Templates" section
-        $sections[] = array(
-            'id'   => 'all_templates',
-            'name' => __( 'All Templates', 'ayecode-connect' ),
-            'icon' => 'fa-solid fa-layer-group',
-            'type' => 'list_table',
-
-            'table_config' => array(
-                'singular'         => __( 'Template', 'ayecode-connect' ),
-                'plural'           => __( 'Templates', 'ayecode-connect' ),
-                'ajax_action_get'  => 'get_templates',
-                'ajax_action_bulk' => 'bulk_template_action',
-
-                'columns' => array(
-                    'name'       => array( 'label' => __( 'Template', 'ayecode-connect' ) ),
-                    'usage' => array( 'label' => __( 'Usage', 'ayecode-connect' ) ),
-                    'builder'    => array( 'label' => __( 'Editor', 'ayecode-connect' ) ),
-                    'product'    => array( 'label' => __( 'Product', 'ayecode-connect' ) ),
-                ),
-
-                'statuses' => array(
-                    'status_key'     => 'status',
-                    'labels'         => array(
-                        'publish'    => __( 'Active', 'ayecode-connect' ),
-                        'draft'      => __( 'Drafts', 'ayecode-connect' ),
-                        'customized' => __( 'Customized', 'ayecode-connect' ),
-                        'default'    => __( 'Default', 'ayecode-connect' ),
-                    ),
-                ),
-
-                'bulk_actions' => array(
-                    'delete'   => __( 'Delete', 'ayecode-connect' ),
-                    'publish'  => __( 'Publish', 'ayecode-connect' ),
-                    'draft'    => __( 'Set to Draft', 'ayecode-connect' ),
-                ),
-
-//                'row_actions' => array(
-//                    'edit'    => __( 'Edit', 'ayecode-connect' ),
-//                    'restore' => __( 'Restore to Default', 'ayecode-connect' ),
-//                ),
-            ),
-        );
-
-        // Add product-specific sections (read-only views, no CRUD)
-        foreach ( $registered_templates as $product_slug => $product_data ) {
-            $sections[] = array(
-                'id'   => $product_slug . '_templates',
-                'name' => $product_data['group_label'],
-                'icon' => $product_data['group_icon'],
-                'type' => 'list_table',
-
-                'table_config' => array(
-                    'singular'         => __( 'Template', 'ayecode-connect' ),
-                    'plural'           => __( 'Templates', 'ayecode-connect' ),
-                    'ajax_action_get'  => 'get_templates',
-                    'ajax_action_bulk' => 'bulk_template_action',
-
-                    'columns' => array(
-                        'name_desc'       => array( 'label' => __( 'Template', 'ayecode-connect' ) ),
-                        'usage' => array( 'label' => __( 'Usage', 'ayecode-connect' ) ),
-                        'builder'    => array( 'label' => __( 'Editor', 'ayecode-connect' ) ),
-                    ),
-
-                    'statuses' => array(
-                        'status_key'     => 'status',
-                        'labels'         => array(
-                            'publish'    => __( 'Active', 'ayecode-connect' ),
-                            'draft'      => __( 'Drafts', 'ayecode-connect' ),
-                            'customized' => __( 'Customized', 'ayecode-connect' ),
-                            'default'    => __( 'Default', 'ayecode-connect' ),
-                        ),
-                    ),
-
-                    'bulk_actions' => array(
-                        'delete'   => __( 'Delete', 'ayecode-connect' ),
-                        'publish'  => __( 'Publish', 'ayecode-connect' ),
-                        'draft'    => __( 'Set to Draft', 'ayecode-connect' ),
-                    ),
-
-//                    'row_actions' => array(
-//                        'edit'    => __( 'Edit', 'ayecode-connect' ),
-//                        'restore' => __( 'Restore to Default', 'ayecode-connect' ),
-//                    ),
-                    'row_actions' => [
-//                        'restore' => [
-//                            'label' => 'Restore to Default',
-//                            'icon' => 'fa-solid fa-rotate-left',
-//                            'ajax_action' => 'restore_template',
-////                            'show_if' => "item.status === 'inactive'"
-//                        ],
-                        'settings' => [
-                            'label' => 'Settings',
-                            'icon' => 'fa-solid fa-gear',
-                            'action' => 'edit'
-                        ],
-                        'edit' => [
-                            'label' => __( 'Edit', 'ayecode-connect' ),
-                            'icon' => 'fa-solid fa-pencil',
-//                            'action' => 'edit'
-                            'link' => '{{edit_url}}', // Use {{property}} for item values
-                            'target' => '_blank' // Open in new tab
-                        ],
-                        'delete' => [
-                            'label' => __( 'Delete', 'ayecode-connect' ),
-                            'icon' => 'fa-solid fa-trash-can',
-                            'action' => 'delete',
-//                            'show_if' => "item.status !== 'protected'"
-                        ],
-
-                    ]
-                ),
-
-                // settings modal
-                'modal_config' => [
-                    'title_add'  => __( 'Add New Template', 'ayecode-connect' ),
-                    'title_edit' => __( 'Edit Template Settings', 'ayecode-connect' ),
-                    'ajax_action_create' => 'add_template',
-                    'ajax_action_update' => 'update_template',
-//                    'ajax_action_delete' => 'delete_iconx',
-
-                    'fields' => [
-                        [
-                            'id'      => 'rename_info',
-                            'type'    => 'alert',
-                            'alert_type' => 'danger',
-                            'description' => __( 'Changing the icon identifier will break all current usage of the icon.', 'ayecode-connect' ),
-                            'show_if' => "[%id%] != null && [%id%] != ''"
-                        ],
-                        [
-                            'id'      => 'type',
-                            'type'    => 'select',
-                            'label'   => __( 'Type', 'ayecode-connect' ),
-                            'description'    => __( 'Select the type of template', 'ayecode-connect' ),
-                            'options' => [
-                                '' => __( 'Select template type', 'ayecode-connect' ),
-                                'add-listing' => __( 'Add Listing', 'ayecode-connect' ),
-                                'single' => __( 'Single', 'ayecode-connect' ),
-                                'archive' => __( 'Archive', 'ayecode-connect' ),
-                                'archive-item' => __( 'Archive Item', 'ayecode-connect' ),
-                                'map-popup' => __( 'Map Popup', 'ayecode-connect' ),
-//                                'single' => __( 'Single', 'ayecode-connect' ),
-                            ],
-                            'extra_attributes' => ['required' => true],
-                            'show_if' => "[%id%] == null || [%id%] == ''"
-                        ],
-                        [
-                            'id'      => 'post_type',
-                            'type'    => 'select',
-                            'label'   => __( 'Post Type', 'ayecode-connect' ),
-                            'description'    => __( 'Select the post type this should apply to', 'ayecode-connect' ),
-                            'options' => [
-                                '' => __( 'Select post type', 'ayecode-connect' ),
-                                'gd_place' => __( 'Places', 'ayecode-connect' ),
-                                'gd_event' => __( 'Event', 'ayecode-connect' ),
-                            ],
-                            'extra_attributes' => ['required' => true],
-                            'show_if' => "[%id%] == null || [%id%] == ''",
-                        ],
-                        [
-                            'id'      => 'name',
-                            'type'    => 'text',
-                            'label'   => __( 'Name', 'ayecode-connect' ),
-                            'description'    => __( 'A friendly name for the template', 'ayecode-connect' ),
-                            'extra_attributes' => ['required' => true]
-//                            'show_if' => "[%id%] == null || [%id%] == ''"
-                        ],
-                        [
-                            'id'       => 'page_slug',
-                            'type'     => 'slug',
-                            'label'    => __( 'Page Slug', 'ayecode-connect' ),
-                            'placeholder' => __( 'add-new-event', 'ayecode-connect' ),
-                            'description' => __( 'This is the slug used when the page is viewed', 'ayecode-connect' ),
-//                            'show_if' => "[%icon_type%] == 'code' && ( [%id%] == null || [%id%] == '' )"
-                        ],
-                    ]
-                ],
-            );
-        }
-
-        /**
-         * Filter the template manager sections.
-         *
-         * Allows other plugins to inject additional sections into the left sidebar.
-         *
-         * @param array $sections Array of section configurations.
-         */
-        $sections = apply_filters( 'ayecode_template_manager_sections', $sections );
-
-        return array(
-            'sections' => $sections,
-        );
-    }
-
-    /**
-     * Central handler for all AJAX actions on this page.
-     *
-     * Handles CRUD operations for the template list_table interface.
-     *
-     * @param string $tool_action The 'ajax_action' from the field config.
-     * @param array  $post_data   The full $_POST data from the request.
-     */
-    public function ajax_actions( $tool_action, $post_data ) {
-        // Nonce already verified by Settings Framweork
-
-        switch ( $tool_action ) {
-            case 'get_templates':
-                $this->handle_get_templates( $post_data );
-                break;
-
-            case 'create_template':
-                $this->handle_create_template( $post_data );
-                break;
-
-            case 'update_template':
-                $this->handle_update_template( $post_data );
-                break;
-
-            case 'delete_template':
-                $this->handle_delete_template( $post_data );
-                break;
-
-            case 'bulk_template_action':
-                $this->handle_bulk_action( $post_data );
-                break;
-
-            case 'restore_template':
-                $this->handle_restore_template( $post_data );
-                break;
-
-            default:
-                wp_send_json_error( array( 'message' => __( 'Unknown action.', 'ayecode-connect' ) ) );
-        }
-    }
-
-    /**
-     * Handle get_templates AJAX action.
-     *
-     * Retrieves all templates with optional status filtering.
-     *
-     * @param array $post_data POST data from the AJAX request.
-     */
-    private function handle_get_templates( $post_data ) {
-        // Status can come from either 'status' POST param or inside 'data' JSON
-        $status = 'all';
-        if ( ! empty( $post_data['status'] ) ) {
-            $status = sanitize_text_field( $post_data['status'] );
-        } else {
-            $data = ! empty( $post_data['data'] ) ? json_decode( stripslashes( $post_data['data'] ), true ) : array();
-            if ( ! empty( $data['status'] ) ) {
-                $status = sanitize_text_field( $data['status'] );
-            }
-        }
-
-        $section_id = ! empty( $post_data['section_id'] ) ? sanitize_text_field( $post_data['section_id'] ) : 'all_templates';
-
-        // Extract product slug from section_id (e.g., 'geodirectory_templates' -> 'geodirectory')
-        $product = '';
-        if ( 'all_templates' !== $section_id ) {
-            $product = str_replace( '_templates', '', $section_id );
-        }
-
-        // Use TemplateManager to get formatted templates
-        $manager = TemplateManager::instance();
-        $response = $manager->get_templates_for_display(
-            array(
-                'status'  => $status,
-                'product' => $product,
-            )
-        );
-
-        wp_send_json_success( $response );
-    }
-
-    /**
-     * Handle create_template AJAX action.
-     *
-     * Creates a new template post.
-     *
-     * @param array $post_data POST data from the AJAX request.
-     */
-    private function handle_create_template( $post_data ) {
-        $data = ! empty( $post_data['data'] ) ? json_decode( stripslashes( $post_data['data'] ), true ) : array();
-
-        $name        = ! empty( $data['name'] ) ? sanitize_text_field( $data['name'] ) : '';
-        $builder     = ! empty( $data['builder'] ) ? sanitize_text_field( $data['builder'] ) : 'gutenberg';
-        $product     = ! empty( $data['product'] ) ? sanitize_text_field( $data['product'] ) : '';
-        $status      = ! empty( $data['status'] ) ? sanitize_text_field( $data['status'] ) : 'draft';
-        $description = ! empty( $data['description'] ) ? sanitize_textarea_field( $data['description'] ) : '';
-
-        if ( empty( $name ) ) {
-            wp_send_json_error( array( 'message' => __( 'Template name is required.', 'ayecode-connect' ) ) );
-        }
-
-        // Create the template post.
-        $post_id = wp_insert_post(
-            array(
-                'post_title'   => $name,
-                'post_content' => $description,
-                'post_type'    => 'page',
-                'post_status'  => 'publish',
-            )
-        );
-
-        if ( is_wp_error( $post_id ) ) {
-            wp_send_json_error( array( 'message' => $post_id->get_error_message() ) );
-        }
-
-        // Save meta fields.
-        update_post_meta( $post_id, '_template_status', $status );
-        update_post_meta( $post_id, '_template_builder', $builder );
-        update_post_meta( $post_id, '_template_product', $product );
-
-        // Get thumbnail.
-        $thumbnail = get_the_post_thumbnail_url( $post_id, 'thumbnail' );
-        if ( ! $thumbnail ) {
-            $thumbnail = plugins_url( 'assets/img/placeholder.png', AYECODE_TEMPLATE_MANAGER_PLUGIN_FILE );
-        }
-
-        // Return the created template.
-        $result = array(
-            'id'      => $post_id,
-            'image'   => $thumbnail ? '<img src="' . esc_url( $thumbnail ) . '" alt="' . esc_attr( $name ) . '" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px;">' : '',
-            'name'    => $name,
-            'builder' => ucfirst( $builder ),
-            'product' => ucfirst( $product ),
-            'status'  => $status,
-        );
-
-        wp_send_json_success( $result );
-    }
-
-    /**
-     * Handle update_template AJAX action.
-     *
-     * Updates an existing template post.
-     *
-     * @param array $post_data POST data from the AJAX request.
-     */
-    private function handle_update_template( $post_data ) {
-        $data = ! empty( $post_data['data'] ) ? json_decode( stripslashes( $post_data['data'] ), true ) : array();
-
-        print_r($data);exit;
-
-        $id          = ! empty( $data['id'] ) ? absint( $data['id'] ) : 0;
-        $name        = ! empty( $data['name'] ) ? sanitize_text_field( $data['name'] ) : '';
-        $builder     = ! empty( $data['builder'] ) ? sanitize_text_field( $data['builder'] ) : 'gutenberg';
-        $product     = ! empty( $data['product'] ) ? sanitize_text_field( $data['product'] ) : '';
-        $status      = ! empty( $data['status'] ) ? sanitize_text_field( $data['status'] ) : 'draft';
-        $description = ! empty( $data['description'] ) ? sanitize_textarea_field( $data['description'] ) : '';
-
-        if ( ! $id ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'ayecode-connect' ) ) );
-        }
-
-        // Verify the post exists and is a page.
-        $template = get_post( $id );
-        if ( ! $template || 'page' !== $template->post_type ) {
-            wp_send_json_error( array( 'message' => __( 'Template not found.', 'ayecode-connect' ) ) );
-        }
-
-        // Update the post.
-        $result = wp_update_post(
-            array(
-                'ID'           => $id,
-                'post_title'   => $name,
-                'post_content' => $description,
-            )
-        );
-
-        if ( is_wp_error( $result ) ) {
-            wp_send_json_error( array( 'message' => $result->get_error_message() ) );
-        }
-
-        // Update meta fields.
-        update_post_meta( $id, '_template_status', $status );
-        update_post_meta( $id, '_template_builder', $builder );
-        update_post_meta( $id, '_template_product', $product );
-
-        // Get thumbnail.
-        $thumbnail = get_the_post_thumbnail_url( $id, 'thumbnail' );
-        if ( ! $thumbnail ) {
-            $thumbnail = plugins_url( 'assets/img/placeholder.png', AYECODE_TEMPLATE_MANAGER_PLUGIN_FILE );
-        }
-
-        // Return the updated template.
-        $result = array(
-            'id'      => $id,
-            'image'   => $thumbnail ? '<img src="' . esc_url( $thumbnail ) . '" alt="' . esc_attr( $name ) . '" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px;">' : '',
-            'name'    => $name,
-            'builder' => ucfirst( $builder ),
-            'product' => ucfirst( $product ),
-            'status'  => $status,
-        );
-
-        wp_send_json_success( $result );
-    }
-
-    /**
-     * Handle delete_template AJAX action.
-     *
-     * Deletes a template post.
-     *
-     * @param array $post_data POST data from the AJAX request.
-     */
-    private function handle_delete_template( $post_data ) {
-        $data = ! empty( $post_data['data'] ) ? json_decode( stripslashes( $post_data['data'] ), true ) : array();
-        $id   = ! empty( $data['id'] ) ? absint( $data['id'] ) : 0;
-
-        if ( ! $id ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'ayecode-connect' ) ) );
-        }
-
-        // Verify the post exists and is a page.
-        $template = get_post( $id );
-        if ( ! $template || 'page' !== $template->post_type ) {
-            wp_send_json_error( array( 'message' => __( 'Template not found.', 'ayecode-connect' ) ) );
-        }
-
-        // Delete the post.
-        $result = wp_delete_post( $id, true );
-
-        if ( ! $result ) {
-            wp_send_json_error( array( 'message' => __( 'Failed to delete template.', 'ayecode-connect' ) ) );
-        }
-
-        wp_send_json_success( array( 'message' => __( 'Template deleted successfully.', 'ayecode-connect' ) ) );
-    }
-
-    /**
-     * Handle bulk_template_action AJAX action.
-     *
-     * Processes bulk actions on multiple templates.
-     *
-     * @param array $post_data POST data from the AJAX request.
-     */
-    private function handle_bulk_action( $post_data ) {
-        $data     = ! empty( $post_data['data'] ) ? json_decode( stripslashes( $post_data['data'] ), true ) : array();
-        $item_ids = ! empty( $data['item_ids'] ) ? $data['item_ids'] : array();
-        $action   = ! empty( $data['action'] ) ? sanitize_text_field( $data['action'] ) : '';
-
-        if ( empty( $item_ids ) || ! is_array( $item_ids ) ) {
-            wp_send_json_error( array( 'message' => __( 'No templates selected.', 'ayecode-connect' ) ) );
-        }
-
-        if ( empty( $action ) ) {
-            wp_send_json_error( array( 'message' => __( 'No action specified.', 'ayecode-connect' ) ) );
-        }
-
-        $success_count = 0;
-        $error_count   = 0;
-        $errors        = array();
-
-        foreach ( $item_ids as $id ) {
-            $id = absint( $id );
-
-            if ( 'delete' === $action ) {
-                $result = wp_delete_post( $id, true );
-                if ( $result ) {
-                    $success_count++;
-                } else {
-                    $error_count++;
-                    $errors[] = sprintf( __( 'Failed to delete template ID: %d', 'ayecode-connect' ), $id );
-                }
-            } elseif ( 'activate' === $action ) {
-                update_post_meta( $id, '_template_status', 'active' );
-                $success_count++;
-            } elseif ( 'draft' === $action ) {
-                update_post_meta( $id, '_template_status', 'draft' );
-                $success_count++;
-            }
-        }
-
-        // Build response message.
-        if ( $success_count > 0 && 0 === $error_count ) {
-            $message = sprintf(
-            /* translators: %d: number of templates */
-                _n( '%d template processed successfully.', '%d templates processed successfully.', $success_count, 'ayecode-connect' ),
-                $success_count
-            );
-            wp_send_json_success( array( 'message' => $message ) );
-        } elseif ( $success_count > 0 && $error_count > 0 ) {
-            $message = sprintf(
-            /* translators: %1$d: success count, %2$d: error count */
-                __( '%1$d template(s) processed successfully. %2$d failed.', 'ayecode-connect' ),
-                $success_count,
-                $error_count
-            );
-            wp_send_json_success( array( 'message' => $message ) );
-        } else {
-            wp_send_json_error( array( 'message' => __( 'Bulk action failed: ', 'ayecode-connect' ) . implode( ', ', $errors ) ) );
-        }
-    }
-
-    /**
-     * Handle restore_template action.
-     *
-     * Restores a template to its default state.
-     *
-     * @param array $post_data POST data from the AJAX request.
-     */
-    private function handle_restore_template( $post_data ) {
-        $data = ! empty( $post_data['data'] ) ? json_decode( stripslashes( $post_data['data'] ), true ) : array();
-        $id   = ! empty( $data['id'] ) ? absint( $data['id'] ) : 0;
-
-        if ( ! $id ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'ayecode-connect' ) ) );
-        }
-
-        $result = Helpers::restore_template( $id );
-
-        if ( $result ) {
-            wp_send_json_success( array( 'message' => __( 'Template restored to default successfully.', 'ayecode-connect' ) ) );
-        } else {
-            wp_send_json_error( array( 'message' => __( 'Failed to restore template.', 'ayecode-connect' ) ) );
-        }
-    }
+	/**
+	 * Single instance of the class.
+	 *
+	 * @var Settings
+	 */
+	private static $instance = null;
+
+	/**
+	 * Framework configuration properties.
+	 */
+	protected $option_name   = 'ayecode-template-manager';
+	protected $page_slug     = 'ayecode-templates';
+	protected $plugin_name   = '<i class="fa-solid fa-layer-group me-2 text-primary-emphasis fs-4 mb-1"></i> Templates';
+	protected $menu_title    = 'Templates';
+	protected $page_title    = 'Template Manager';
+	protected $menu_icon     = 'dashicons-layout';
+	protected $menu_position = null;
+	protected $parent_slug   = 'themes.php';
+
+	/**
+	 * Get the singleton instance.
+	 *
+	 * @return Settings
+	 */
+	public static function instance() {
+		if ( is_null( self::$instance ) ) {
+			self::$instance = new self();
+		}
+		return self::$instance;
+	}
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		parent::__construct();
+
+		// Hook into AJAX actions for list_table operations.
+		add_action( 'asf_execute_tool_' . $this->page_slug, array( $this, 'ajax_actions' ), 10, 2 );
+	}
+
+	/**
+	 * URL of the Templates screen.
+	 *
+	 * @return string
+	 */
+	public static function get_page_url() {
+		return admin_url( 'themes.php?page=ayecode-templates' );
+	}
+
+	/**
+	 * Get the settings configuration.
+	 *
+	 * @return array Configuration array with sections.
+	 */
+	public function get_config() {
+		$registry             = Registry::instance();
+		$registered_templates = $registry->get_registered_templates();
+		$environment          = Environment::get();
+
+		$sections = array();
+
+		$sections[] = $this->build_section(
+			'all_templates',
+			__( 'All Templates', 'ayecode-connect' ),
+			'fa-solid fa-layer-group',
+			null,
+			$environment,
+			true
+		);
+
+		foreach ( $registered_templates as $product_slug => $product_data ) {
+			$sections[] = $this->build_section(
+				$product_slug . '_templates',
+				$product_data['group_label'],
+				$product_data['group_icon'],
+				$product_data,
+				$environment,
+				false
+			);
+		}
+
+		/**
+		 * Filter the template manager sections.
+		 *
+		 * Allows other plugins to inject additional sections into the left sidebar.
+		 *
+		 * @param array $sections Array of section configurations.
+		 */
+		$sections = apply_filters( 'ayecode_template_manager_sections', $sections );
+
+		return array(
+			'sections' => $sections,
+		);
+	}
+
+	/**
+	 * Build one list_table section.
+	 *
+	 * @param string     $id           Section ID.
+	 * @param string     $name         Section name.
+	 * @param string     $icon         Icon class.
+	 * @param array|null $product_data Validated product group, null for the "all" view.
+	 * @param array      $environment  Environment array.
+	 * @param bool       $show_product Whether to include the Product column.
+	 * @return array
+	 */
+	private function build_section( $id, $name, $icon, $product_data, $environment, $show_product ) {
+		$columns = array(
+			'name_desc' => array( 'label' => __( 'Template', 'ayecode-connect' ) ),
+			'usage'     => array( 'label' => __( 'Applies to', 'ayecode-connect' ) ),
+			'source'    => array( 'label' => __( 'Edited with', 'ayecode-connect' ) ),
+			'state'     => array( 'label' => __( 'State', 'ayecode-connect' ) ),
+		);
+
+		if ( $show_product ) {
+			$columns['product'] = array( 'label' => __( 'Product', 'ayecode-connect' ) );
+		}
+
+		$variants   = $product_data && ! empty( $product_data['variants'] ) ? $product_data['variants'] : array();
+		$can_create = ! empty( $variants['bases'] ) && ! empty( $variants['post_types'] );
+
+		$description = ! empty( $environment['block_theme'] )
+			? __( 'Your theme is a block theme, so these templates are edited in the Site Editor. Pages listed here only provide the URL.', 'ayecode-connect' )
+			: __( 'Each template is a page whose content is rendered inside your theme. Edit it with whichever builder you use.', 'ayecode-connect' );
+
+		return array(
+			'id'           => $id,
+			'name'         => $name,
+			'icon'         => $icon,
+			'type'         => 'list_table',
+			'description'  => $description,
+
+			'table_config' => array(
+				'singular'         => __( 'Template', 'ayecode-connect' ),
+				'plural'           => __( 'Templates', 'ayecode-connect' ),
+				'ajax_action_get'  => 'get_templates',
+				'ajax_action_bulk' => 'bulk_template_action',
+				'can_create'       => $can_create,
+				'columns'          => $columns,
+
+				'statuses'         => array(
+					'status_key' => 'state_key',
+					'labels'     => array(
+						'customized' => __( 'Customized', 'ayecode-connect' ),
+						'attention'  => __( 'Needs attention', 'ayecode-connect' ),
+					),
+				),
+
+				'row_actions'      => array(
+					'edit'     => array(
+						'label'   => __( 'Edit', 'ayecode-connect' ),
+						'icon'    => 'fa-solid fa-pen-to-square',
+						'link'    => '{{edit_url}}',
+						'target'  => '_blank',
+						'show_if' => 'item.edit_url',
+					),
+					'view'     => array(
+						'label'   => __( 'View page', 'ayecode-connect' ),
+						'icon'    => 'fa-solid fa-eye',
+						'link'    => '{{view_url}}',
+						'target'  => '_blank',
+						'show_if' => 'item.can_view',
+					),
+					'restore'  => array(
+						'label'           => __( 'Restore default', 'ayecode-connect' ),
+						'icon'            => 'fa-solid fa-rotate-left',
+						'ajax_action'     => 'restore_template',
+						'confirm_message' => __( 'Restore this template to its default? Your customizations will be lost.', 'ayecode-connect' ),
+						'show_if'         => "item.state_key === 'customized'",
+					),
+					'recreate' => array(
+						'label'           => __( 'Recreate page', 'ayecode-connect' ),
+						'icon'            => 'fa-solid fa-wand-magic-sparkles',
+						'ajax_action'     => 'recreate_template',
+						'confirm_message' => __( 'Create a new page with the default content for this template?', 'ayecode-connect' ),
+						'show_if'         => "item.state_key === 'missing' && item.can_recreate",
+					),
+					'settings' => array(
+						'label'   => __( 'Settings', 'ayecode-connect' ),
+						'icon'    => 'fa-solid fa-gear',
+						'action'  => 'edit',
+						'show_if' => "item.can_configure && item.state_key !== 'missing'",
+					),
+					'delete'   => array(
+						'label'   => __( 'Delete', 'ayecode-connect' ),
+						'icon'    => 'fa-solid fa-trash-can',
+						'action'  => 'delete',
+						'show_if' => 'item.is_override',
+					),
+				),
+			),
+
+			'modal_config' => array(
+				'title_add'          => __( 'Add Template', 'ayecode-connect' ),
+				'title_edit'         => __( 'Template Settings', 'ayecode-connect' ),
+				'ajax_action_create' => 'create_override',
+				'ajax_action_update' => 'update_template',
+				'ajax_action_delete' => 'delete_override',
+				'fields'             => $this->get_modal_fields( $variants, $environment ),
+			),
+		);
+	}
+
+	/**
+	 * Modal fields shared by the Add Template and Template Settings dialogs.
+	 *
+	 * The create fields show when the item has no ID, the settings fields when it does.
+	 *
+	 * @param array $variants    Validated variants for the product.
+	 * @param array $environment Environment array.
+	 * @return array
+	 */
+	private function get_modal_fields( $variants, $environment ) {
+		$is_create = "[%id%] == null || [%id%] == ''";
+		$is_edit   = "[%id%] != null && [%id%] != ''";
+
+		$bases      = array( '' => __( 'Select a template', 'ayecode-connect' ) );
+		$post_types = array( '' => __( 'Select a post type', 'ayecode-connect' ) );
+
+		if ( ! empty( $variants['bases'] ) ) {
+			$bases += $variants['bases'];
+		}
+		if ( ! empty( $variants['post_types'] ) ) {
+			$post_types += $variants['post_types'];
+		}
+
+		$create_help = ! empty( $environment['block_theme'] )
+			? __( 'Creates a copy of a template for one post type in the Site Editor. The original keeps serving every other post type.', 'ayecode-connect' )
+			: __( 'Creates a copy of a template page for one post type. The original keeps serving every other post type.', 'ayecode-connect' );
+
+		return array(
+			array(
+				'id'          => 'create_info',
+				'type'        => 'alert',
+				'alert_type'  => 'info',
+				'description' => $create_help,
+				'show_if'     => $is_create,
+			),
+			array(
+				'id'               => 'base',
+				'type'             => 'select',
+				'label'            => __( 'Based on', 'ayecode-connect' ),
+				'options'          => $bases,
+				'extra_attributes' => array( 'required' => true ),
+				'show_if'          => $is_create,
+			),
+			array(
+				'id'               => 'post_type',
+				'type'             => 'select',
+				'label'            => __( 'Post type', 'ayecode-connect' ),
+				'options'          => $post_types,
+				'extra_attributes' => array( 'required' => true ),
+				'show_if'          => $is_create,
+			),
+			array(
+				'id'               => 'name',
+				'type'             => 'text',
+				'label'            => __( 'Name', 'ayecode-connect' ),
+				'placeholder'      => __( 'Places Single Layout', 'ayecode-connect' ),
+				'extra_attributes' => array( 'required' => true ),
+				'show_if'          => $is_create,
+			),
+			array(
+				'id'          => 'edit_info',
+				'type'        => 'alert',
+				'alert_type'  => 'info',
+				'description' => __( 'Choose which page this template uses. The page you replace is not deleted, so you can switch back later.', 'ayecode-connect' ),
+				'show_if'     => $is_edit . ' && [%uses_page%] == true',
+			),
+			array(
+				'id'      => 'assign_page_id',
+				'type'    => 'select',
+				'label'   => __( 'Page', 'ayecode-connect' ),
+				'options' => $this->get_page_options(),
+				'show_if' => $is_edit . ' && [%uses_page%] == true',
+			),
+			array(
+				'id'          => 'page_slug',
+				'type'        => 'slug',
+				'label'       => __( 'Page slug', 'ayecode-connect' ),
+				'description' => __( 'The part of the URL that identifies this page.', 'ayecode-connect' ),
+				'show_if'     => $is_edit . " && [%type%] == 'page'",
+			),
+		);
+	}
+
+	/**
+	 * Pages available for assignment.
+	 *
+	 * @return array ID => title.
+	 */
+	private function get_page_options() {
+		$options = array( '' => __( 'Select a page', 'ayecode-connect' ) );
+
+		$pages = get_pages(
+			array(
+				'post_status' => array( 'publish', 'private', 'draft' ),
+				'sort_column' => 'post_title',
+			)
+		);
+
+		foreach ( (array) $pages as $page ) {
+			$options[ $page->ID ] = $page->post_title . ' (#' . $page->ID . ')';
+		}
+
+		return $options;
+	}
+
+	/**
+	 * Central handler for all AJAX actions on this page.
+	 *
+	 * The framework has already verified the nonce and capability.
+	 *
+	 * @param string $tool_action The 'ajax_action' from the field config.
+	 * @param array  $post_data   The full $_POST data from the request.
+	 */
+	public function ajax_actions( $tool_action, $post_data ) {
+		switch ( $tool_action ) {
+			case 'get_templates':
+				$this->handle_get_templates( $post_data );
+				break;
+
+			case 'create_override':
+				$this->handle_create_override( $post_data );
+				break;
+
+			case 'update_template':
+				$this->handle_update_template( $post_data );
+				break;
+
+			case 'delete_override':
+				$this->handle_delete_override( $post_data );
+				break;
+
+			case 'restore_template':
+				$this->handle_restore_template( $post_data );
+				break;
+
+			case 'recreate_template':
+				$this->handle_recreate_template( $post_data );
+				break;
+
+			default:
+				wp_send_json_error( array( 'message' => __( 'Unknown action.', 'ayecode-connect' ) ) );
+		}
+	}
+
+	/**
+	 * Decode the JSON "data" payload the list table sends.
+	 *
+	 * @param array $post_data POST data.
+	 * @return array
+	 */
+	private function get_request_data( $post_data ) {
+		if ( empty( $post_data['data'] ) ) {
+			return array();
+		}
+
+		$data = json_decode( wp_unslash( $post_data['data'] ), true );
+
+		return is_array( $data ) ? $data : array();
+	}
+
+	/**
+	 * Resolve the row the request is about, or send an error.
+	 *
+	 * @param array $data Decoded request data.
+	 * @return array Resolved template (product, key, data, group).
+	 */
+	private function require_row( $data ) {
+		$row_id = ! empty( $data['id'] ) ? sanitize_text_field( $data['id'] ) : '';
+		$row    = $row_id ? TemplateManager::resolve_row_id( $row_id ) : false;
+
+		if ( ! $row ) {
+			wp_send_json_error( array( 'message' => __( 'Template not found.', 'ayecode-connect' ) ) );
+		}
+
+		return $row;
+	}
+
+	/**
+	 * Handle get_templates AJAX action.
+	 *
+	 * @param array $post_data POST data from the AJAX request.
+	 */
+	private function handle_get_templates( $post_data ) {
+		$status = 'all';
+		if ( ! empty( $post_data['status'] ) ) {
+			$status = sanitize_key( wp_unslash( $post_data['status'] ) );
+		}
+
+		$section_id = ! empty( $post_data['section_id'] ) ? sanitize_key( wp_unslash( $post_data['section_id'] ) ) : 'all_templates';
+
+		$product = '';
+		if ( 'all_templates' !== $section_id ) {
+			$product = preg_replace( '/_templates$/', '', $section_id );
+		}
+
+		$response = TemplateManager::instance()->get_templates_for_display(
+			array(
+				'status'  => $status,
+				'product' => $product,
+			)
+		);
+
+		wp_send_json_success( $response );
+	}
+
+	/**
+	 * Handle create_override AJAX action.
+	 *
+	 * Creates a per post type copy of a base template.
+	 *
+	 * @param array $post_data POST data from the AJAX request.
+	 */
+	private function handle_create_override( $post_data ) {
+		$data = $this->get_request_data( $post_data );
+
+		$section_id = ! empty( $post_data['section_id'] ) ? sanitize_key( wp_unslash( $post_data['section_id'] ) ) : '';
+		$product    = preg_replace( '/_templates$/', '', $section_id );
+		$base_key   = ! empty( $data['base'] ) ? sanitize_text_field( $data['base'] ) : '';
+		$post_type  = ! empty( $data['post_type'] ) ? sanitize_key( $data['post_type'] ) : '';
+		$name       = ! empty( $data['name'] ) ? sanitize_text_field( $data['name'] ) : '';
+
+		$registry = Registry::instance();
+		$group    = $registry->get_product_templates( $product );
+		$base     = $group ? $registry->get_template( $product, $base_key ) : false;
+
+		if ( ! $group || ! $base || empty( $group['variants']['bases'][ $base_key ] ) || empty( $group['variants']['post_types'][ $post_type ] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Choose a template and a post type.', 'ayecode-connect' ) ) );
+		}
+
+		if ( empty( $name ) ) {
+			$name = sprintf( '%1$s %2$s', $group['variants']['post_types'][ $post_type ], $base['title'] );
+		}
+
+		$environment = Environment::get();
+
+		if ( ! empty( $environment['block_theme'] ) && ! empty( $base['fse_slug'] ) ) {
+			$post_id = $this->create_fse_override( $base, $post_type, $name );
+		} else {
+			$post_id = $this->create_page_override( $base, $post_type, $name );
+		}
+
+		if ( is_wp_error( $post_id ) ) {
+			wp_send_json_error( array( 'message' => $post_id->get_error_message() ) );
+		}
+
+		/**
+		 * Action fired after a per post type override was created.
+		 *
+		 * Host plugins should record the new page (or block template) against
+		 * the post type so it is used on the front end and registered as a row.
+		 *
+		 * @param int    $post_id   New page ID, or wp_template post ID on block themes.
+		 * @param string $base_key  Key of the template it is based on.
+		 * @param string $post_type Post type the override applies to.
+		 * @param string $product   Product slug.
+		 * @param array  $base      Validated base template data.
+		 * @param bool   $is_fse    True when a block template was created.
+		 */
+		do_action( 'ayecode_template_override_created', $post_id, $base_key, $post_type, $product, $base, ! empty( $environment['block_theme'] ) && ! empty( $base['fse_slug'] ) );
+
+		$registry->clear_cache();
+
+		wp_send_json_success( array( 'message' => __( 'Template created.', 'ayecode-connect' ) ) );
+	}
+
+	/**
+	 * Create a page override by cloning the base template page.
+	 *
+	 * @param array  $base      Base template data.
+	 * @param string $post_type Post type.
+	 * @param string $name      Page title.
+	 * @return int|\WP_Error
+	 */
+	private function create_page_override( $base, $post_type, $name ) {
+		$source = ! empty( $base['post_id'] ) ? get_post( $base['post_id'] ) : null;
+
+		$content = $source ? $source->post_content : State::get_default_content( 0, '', $base );
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'      => 'page',
+				'post_status'    => 'publish',
+				'post_title'     => $name,
+				'post_content'   => $content,
+				'comment_status' => 'closed',
+			),
+			true
+		);
+
+		if ( is_wp_error( $post_id ) ) {
+			return $post_id;
+		}
+
+		// Builders store the design in meta, so carry it across too.
+		if ( $source ) {
+			$skip = array( '_edit_lock', '_edit_last', '_wp_old_slug', State::META_DEFAULT_HASH, '_ayecode_template_key' );
+
+			foreach ( (array) get_post_meta( $source->ID ) as $meta_key => $values ) {
+				if ( in_array( $meta_key, $skip, true ) ) {
+					continue;
+				}
+				foreach ( (array) $values as $value ) {
+					add_post_meta( $post_id, $meta_key, maybe_unserialize( $value ) );
+				}
+			}
+		}
+
+		update_post_meta( $post_id, '_ayecode_template_type', $base['type'] );
+		update_post_meta( $post_id, '_ayecode_template_post_type', $post_type );
+
+		State::stamp( $post_id, $content );
+
+		return $post_id;
+	}
+
+	/**
+	 * Create a block template override such as 'single-gd_place'.
+	 *
+	 * @param array  $base      Base template data.
+	 * @param string $post_type Post type.
+	 * @param string $name      Template title.
+	 * @return int|\WP_Error
+	 */
+	private function create_fse_override( $base, $post_type, $name ) {
+		if ( empty( $base['location'] ) || 'wp_template' !== $base['fse_type'] ) {
+			return new \WP_Error( 'ayecode_template_no_fse_variant', __( 'Only single and archive templates can have a per post type version on block themes.', 'ayecode-connect' ) );
+		}
+
+		$slug    = $base['location'] . '-' . $post_type;
+		$content = Fse::get_content( $base['fse_slug'], $base['fse_type'] );
+
+		return Fse::create_template( $slug, $name, $content, 'wp_template' );
+	}
+
+	/**
+	 * Handle update_template AJAX action.
+	 *
+	 * Assigns a different page and/or changes the page slug.
+	 *
+	 * @param array $post_data POST data from the AJAX request.
+	 */
+	private function handle_update_template( $post_data ) {
+		$data = $this->get_request_data( $post_data );
+		$row  = $this->require_row( $data );
+
+		$template_data = $row['data'];
+		$current_id    = $template_data['post_id'];
+		$new_id        = isset( $data['assign_page_id'] ) ? absint( $data['assign_page_id'] ) : $current_id;
+		$slug          = isset( $data['page_slug'] ) ? sanitize_title( $data['page_slug'] ) : '';
+		$messages      = array();
+
+		if ( $new_id && $new_id !== $current_id ) {
+			$page = get_post( $new_id );
+
+			if ( ! $page || 'page' !== $page->post_type ) {
+				wp_send_json_error( array( 'message' => __( 'Please choose a valid page.', 'ayecode-connect' ) ) );
+			}
+
+			/**
+			 * Action fired when a different page is assigned to a template.
+			 *
+			 * Host plugins must update whatever option or setting resolves the
+			 * page for this template.
+			 *
+			 * @param int    $new_id        Newly assigned page ID.
+			 * @param string $template_key  Template key.
+			 * @param array  $template_data Validated template data (with the previous post_id).
+			 * @param string $product       Product slug.
+			 */
+			do_action( 'ayecode_template_assigned', $new_id, $row['key'], $template_data, $row['product'] );
+
+			$current_id = $new_id;
+			$messages[] = __( 'Page assigned.', 'ayecode-connect' );
+		}
+
+		if ( $current_id && '' !== $slug && 'page' === $template_data['type'] ) {
+			$page = get_post( $current_id );
+
+			if ( $page && $page->post_name !== $slug ) {
+				$result = wp_update_post(
+					array(
+						'ID'        => $current_id,
+						'post_name' => $slug,
+					),
+					true
+				);
+
+				if ( is_wp_error( $result ) ) {
+					wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+				}
+
+				$messages[] = __( 'Slug updated.', 'ayecode-connect' );
+			}
+		}
+
+		Registry::instance()->clear_cache();
+
+		wp_send_json_success(
+			array(
+				'message' => $messages ? implode( ' ', $messages ) : __( 'No changes made.', 'ayecode-connect' ),
+			)
+		);
+	}
+
+	/**
+	 * Handle delete_override AJAX action.
+	 *
+	 * Only per post type overrides can be deleted.
+	 *
+	 * @param array $post_data POST data from the AJAX request.
+	 */
+	private function handle_delete_override( $post_data ) {
+		$data = $this->get_request_data( $post_data );
+		$row  = $this->require_row( $data );
+
+		$template_data = $row['data'];
+
+		if ( empty( $template_data['is_override'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Core templates cannot be deleted. Restore it to default instead.', 'ayecode-connect' ) ) );
+		}
+
+		$environment = Environment::get();
+		$is_fse      = ! empty( $environment['block_theme'] ) && ! empty( $template_data['fse_slug'] );
+
+		if ( $is_fse ) {
+			$deleted = Fse::reset( $template_data['fse_slug'], $template_data['fse_type'] );
+		} else {
+			$deleted = ! empty( $template_data['post_id'] ) ? (bool) wp_delete_post( $template_data['post_id'], true ) : true;
+		}
+
+		if ( ! $deleted ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to delete template.', 'ayecode-connect' ) ) );
+		}
+
+		/**
+		 * Action fired after a per post type override was deleted.
+		 *
+		 * Host plugins should clear the setting that pointed at it.
+		 *
+		 * @param int    $post_id       Deleted page ID (0 for block templates).
+		 * @param string $template_key  Template key.
+		 * @param array  $template_data Validated template data.
+		 * @param string $product       Product slug.
+		 * @param bool   $is_fse        True when a block template was deleted.
+		 */
+		do_action( 'ayecode_template_override_deleted', $template_data['post_id'], $row['key'], $template_data, $row['product'], $is_fse );
+
+		Registry::instance()->clear_cache();
+
+		wp_send_json_success( array( 'message' => __( 'Template deleted.', 'ayecode-connect' ) ) );
+	}
+
+	/**
+	 * Handle restore_template action.
+	 *
+	 * @param array $post_data POST data from the AJAX request.
+	 */
+	private function handle_restore_template( $post_data ) {
+		$data = $this->get_request_data( $post_data );
+		$row  = $this->require_row( $data );
+
+		$result = Helpers::restore_template( $row['data']['post_id'], $row['key'], $row['data'] );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Template restored to default.', 'ayecode-connect' ) ) );
+	}
+
+	/**
+	 * Handle recreate_template action.
+	 *
+	 * @param array $post_data POST data from the AJAX request.
+	 */
+	private function handle_recreate_template( $post_data ) {
+		$data = $this->get_request_data( $post_data );
+		$row  = $this->require_row( $data );
+
+		$result = Helpers::recreate_template( $row['key'], $row['data'], $row['product'] );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Page recreated.', 'ayecode-connect' ) ) );
+	}
 }
